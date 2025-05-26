@@ -1,0 +1,37 @@
+body {
+  background-color: #111;
+  color: #aaa;
+  font-family: system-ui, sans-serif;
+}
+
+.card, .navbar, .btn {
+  background-color: #111;
+  color: #aaa;
+  border: 1px solid #333;
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link,
+.navbar .nav-item {
+  color: #aaa;
+}
+
+a {
+  color: #aaa;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+
+footer {
+  background-color: #111;
+  color: #aaa;
+  border-top: 1px solid #333 !important;
+}
+
+footer small {
+  color: #888; /* nhẹ nhàng hơn text chính */
+}
