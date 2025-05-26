@@ -55,4 +55,13 @@
         { time: '2019-04-19', value: 81.89 },
         { time: '2019-04-20', value: 74.43 },
     ]);
+
+  window.addEventListener('resize', () => {
+  const style = getComputedStyle(container);
+  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  const newWidth = container.clientWidth - paddingX;
+  const newHeight = container.clientHeight - paddingY;
+  chart.resize(newWidth, newHeight);
+});
 </script>
