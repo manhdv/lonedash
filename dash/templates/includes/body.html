@@ -10,58 +10,11 @@
   <div class="col-md-6">
     <div class="card p-3">
       <h5 class="card-title">Chart 2</h5>
-      <div id="chart2">[Insert Chart Here]</div>
+      <div id="chart2" style="height: 10rem;">[Insert Chart Here]</div>
     </div>
   </div>
 </div>
 
+{% block javascripts %}
 
-<script>
-    const container = document.getElementById('chart1');
-    // Get computed padding values
-    const style = getComputedStyle(container);
-    const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-
-    // Subtract padding from actual dimensions
-    const width = container.clientWidth - paddingX;
-    const height = container.clientHeight - paddingY;
-    const chart = LightweightCharts.createChart(container, { 
-      width, 
-      height, 
-      layout: {
-        background: { color: '#111' },   // match body bg
-        textColor: '#eee',         // cho text chart nổi bật
-      },
-      grid: {
-        vertLines: {
-          color: '#222',
-        },
-        horzLines: {
-          color: '#222',
-        },
-      },
-    });
-    const lineSeries = chart.addSeries(LightweightCharts.LineSeries);
-    lineSeries.setData([
-        { time: '2019-04-11', value: 80.01 },
-        { time: '2019-04-12', value: 96.63 },
-        { time: '2019-04-13', value: 76.64 },
-        { time: '2019-04-14', value: 81.89 },
-        { time: '2019-04-15', value: 74.43 },
-        { time: '2019-04-16', value: 80.01 },
-        { time: '2019-04-17', value: 96.63 },
-        { time: '2019-04-18', value: 76.64 },
-        { time: '2019-04-19', value: 81.89 },
-        { time: '2019-04-20', value: 74.43 },
-    ]);
-
-  window.addEventListener('resize', () => {
-  const style = getComputedStyle(container);
-  const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-  const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  const newWidth = container.clientWidth - paddingX;
-  const newHeight = container.clientHeight - paddingY;
-  chart.resize(newWidth, newHeight);
-});
-</script>
+{% endblock javascripts %}
