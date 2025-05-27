@@ -1,48 +1,17 @@
+:root {
+  --night: #111111;
+  --indian-red: #db5461;
+  --baby-powder: #fdfffc;
+  --wheat: #efd6ac;
+}
+
 body {
-  background-color: #111;
-  color: #aaa;
-  font-family: system-ui, sans-serif;
+  background-color: var(--night);
+  color: var(--baby-powder);
+  font-size: 0.875rem; /* 14px */
 }
 
-.card,.btn{
-  background-color: #111;
-  color: #aaa;
-  border: 1px solid #444;
-}
-
-.navbar{
-  background-color: #111;
-  color: #aaa;
-  border: none;
-  border-bottom: 1px solid #444;
-}
-
-.navbar .navbar-brand,
-.navbar .nav-link,
-.navbar .nav-item {
-  color: #aaa;
-}
-
-.navbar .nav-link:hover {
-  color: #eee;
-}
-
-a {
-  color: #eee;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-
-footer {
-  background-color: #111;
-  color: #aaa;
-  border-top: 1px solid #444 !important;
-}
-
-footer small {
-  color: #888; /* nhẹ nhàng hơn text chính */
+.navbar {
+  background-color: var(--indian-red);
+  color: var(--wheat);
 }
