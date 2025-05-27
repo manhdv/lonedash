@@ -1,5 +1,3 @@
-
-
 <div class="row g-4">
   <div class="col-md-6">
     <div class="card p-3">
@@ -10,11 +8,34 @@
   <div class="col-md-6">
     <div class="card p-3">
       <h5 class="card-title">Chart 2</h5>
-      <div id="chart2" style="height: 10rem;">[Insert Chart Here]</div>
+      <div id="chart2" style="height: 10rem;"></div>
     </div>
   </div>
+
+  <div class="col-md-6">
+    <div class="card p-3">
+      <table class="table table-bordered table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Indicator</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in indicators %}
+          <tr>
+            <td>{{ item.indicator.name }}</td>
+            <td>{{ item.value }}</td>
+            <td>{{ item.indicator.unit }}</td>
+            <td>{{ item.date }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">No data found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div> 
+  </div>
 </div>
-
-{% block javascripts %}
-
-{% endblock javascripts %}
