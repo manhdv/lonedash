@@ -13,5 +13,13 @@ body {
 
 .navbar {
   background-color: var(--indian-red);
-  color: var(--wheat);
+  color: var(--baby-powder);
+}
+
+a.nav-link{
+  text-decoration: underline;
+}
+
+a.nav-link:hover, a.navbar-brand:hover {
+  text-decoration: none;
 }

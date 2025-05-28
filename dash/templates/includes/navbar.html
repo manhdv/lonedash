@@ -1,7 +1,34 @@
-<nav class="navbar navbar-expand-lg navbar-dark px-3">
-  <a class="navbar-brand" href="#">LoneDash</a>
-  <div class="collapse navbar-collapse" id="navbarContent">
-    <a href="#" class="btn  ms-auto">NEW WIDGET</a>
-    <a href="#" class="btn p-0 border-0 bg-transparent">MAGE</a>
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+        aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">LoneDash</a>
+    </div>
+    <div id="navbar" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="{% if request.path == '/dashboard/' %}active{% endif %}">
+          <a href="{% url 'dash' %}">Dashboard</a>
+        </li>
+        <li class="{% if request.path == '/pages/' %}active{% endif %}">
+          <a href="{% url 'pages' %}">Pages</a>
+        </li>
+        <li class="{% if request.path == '/posts/' %}active{% endif %}">
+          <a href="{% url 'posts' %}">Posts</a>
+        </li>
+        <li class="{% if request.path == '/users/' %}active{% endif %}">
+          <a href="{% url 'users' %}">Users</a>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#">Welcome, Mage</a></li>
+        <li><a href="{% url 'login' %}">Logout</a></li>
+      </ul>
+    </div><!--/.nav-collapse -->
   </div>
 </nav>
