@@ -26,3 +26,6 @@ def users_view(request):
 
 def login_view(request):
     return render(request, 'login.html')
+
+def edit_view(request):
+    return render(request, 'edit.html')

@@ -108,12 +108,10 @@ def map_matrix_data_to_economic_data(matrix_data: list[dict]):
 
 class Command(BaseCommand):
     help = "Scrape TradingEconomics matrix and save data to DB"
-    matrix_data = scrape_te_matrix()
-    for entry in matrix_data[:1]:  # Show first 5 countries
-        print(entry)
 
-    map_matrix_data_to_economic_data(matrix_data)
     def handle(self, *args, **options):
         matrix_data = scrape_te_matrix()
+        for entry in matrix_data[:1]:
+            print(entry)
         map_matrix_data_to_economic_data(matrix_data)
         self.stdout.write(self.style.SUCCESS("TE matrix scraped and saved."))
