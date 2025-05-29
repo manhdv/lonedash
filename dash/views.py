@@ -12,7 +12,7 @@ def dash_view(request):
     for row in latest_dates:
         ed = EconomicData.objects.get(country=vietnam, indicator=row['indicator'], date=row['latest'])
         data.append(ed)
-    return render(request, 'dash.html', {'indicators': data, 'page_title': 'Dashboard',
+    return render(request, 'index.html', {'indicators': data, 'page_title': 'Dashboard',
         'page_subtitle': 'Manage Your Site',})
 
 
