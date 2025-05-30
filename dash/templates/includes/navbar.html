@@ -1,38 +1,26 @@
-<nav class="navbar navbar-expand-lg navbar-dark custom-navbar">
-  <div class="container">
-    <a class="navbar-brand" href="#">LoneDash</a>
-
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar"
-      aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbar">
-      <!-- Left menu -->
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/dash/' %}active{% endif %}" href="{% url 'dash' %}">Dashboard</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/pages/' %}active{% endif %}" href="{% url 'pages' %}">Pages</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/posts/' %}active{% endif %}" href="{% url 'posts' %}">Posts</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.path == '/users/' %}active{% endif %}" href="{% url 'users' %}">Users</a>
-        </li>
-      </ul>
-
-      <!-- Right menu -->
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <span class="nav-link disabled">Welcome, Mage</span>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'login' %}">Logout</a>
-        </li>
-      </ul>
-    </div>
+<header class="navbar sticky-top bg-dark flex-md-nowrap p-0 shadow" data-bs-theme="dark">
+  <a
+  class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" href="#">Lone Dash
+  </a>
+  <ul class="navbar-nav flex-row d-md-none">
+    <li class="nav-item text-nowrap">
+        <button class="nav-link px-3 text-white" type="button" data-bs-toggle="collapse"
+          data-bs-target="#navbarSearch" aria-controls="navbarSearch" aria-expanded="false" aria-label="Toggle search">
+          <svg class="bi" aria-hidden="true">
+              <use xlink:href="#search"></use>
+          </svg>
+        </button>
+    </li>
+    <li class="nav-item text-nowrap">
+        <button class="nav-link px-3 text-white" type="button" data-bs-toggle="offcanvas"
+          data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+          <svg class="bi" aria-hidden="true">
+              <use xlink:href="#list"></use>
+          </svg>
+        </button>
+    </li>
+  </ul>
+  <div id="navbarSearch" class="navbar-search w-100 collapse"> <input class="form-control w-100 rounded-0 border-0"
+    type="text" placeholder="Search" aria-label="Search">
   </div>
-</nav>
+</header>
