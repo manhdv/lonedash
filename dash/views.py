@@ -10,3 +10,6 @@ def dash_view(request):
     with open(svg_path, 'r', encoding='utf-8') as f:
         svg_content = f.read()
     return render(request, 'dash.html', {'icons_svg': svg_content})
+
+def accounts_view(request):
+    return render(request, 'accounts.html')
