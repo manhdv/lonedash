@@ -12,9 +12,18 @@
     {% include "includes/navbar.html" %}
     {% endblock %}
 
+<div class="container-fluid">
+  <div class="row">
+    {% block sidebar %}
+    {% include "includes/sidebar.html" %}
+    {% endblock %}
+
     {% block content %}
 
     {% endblock %}
+
+  </div>
+</div>
 
     {% block scripts %}
     {% include "includes/scripts.html" %}
