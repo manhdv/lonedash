@@ -51,21 +51,32 @@ class EconomicData(models.Model):
         return f'{self.country} - {self.indicator} @ {self.date}: {self.value}'
 
 class Account(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='account')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts')
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, choices=[
         ('deposit', 'Deposit'),
-        ('security', 'Security'),
+        ('broker', 'Broker'),
     ])
-    balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     currency = models.CharField(max_length=10, default='USD')
-    date = models.DateField(default=date.today)
     active = models.BooleanField(default=True)
 
     # metadata
     description = models.TextField(blank=True)
+
     def __str__(self):
         return f"{self.name} - {self.currency}"
+
+class AccountBalance(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='balances')
+    date = models.DateField(default=date.today)
+    balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+    class Meta:
+        unique_together = ('account', 'date')  # 1 balance / day
+
+    def __str__(self):
+        return f"{self.account.name} - {self.date}: {self.balance}"
+
 
 class Transaction(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transaction')
