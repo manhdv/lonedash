@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import logout
-
+from django.core.paginator import Paginator
 
 # Create your views here.
 def get_icons_svg():
@@ -32,14 +32,21 @@ def recalc_account_balance_from_date(account, start_date):
     transactions = account.transaction.filter(date__gte=start_date).order_by('date')
 
     # Lấy balance ngày trước start_date để làm điểm xuất phát
-    prev_balance_obj = AccountBalance.objects.filter(account=account, date__lt=start_date).order_by('-date').first()
-    balance = prev_balance_obj.balance if prev_balance_obj else 0
+    prev_obj = AccountBalance.objects.filter(account=account, date__lt=start_date).order_by('-date').first()
+    balance = prev_obj.balance if prev_obj else 0
+    fee = prev_obj.fee if prev_obj else 0
+    tax = prev_obj.tax if prev_obj else 0
+
 
     # Dùng dict để cộng balance theo từng ngày
     daily_changes = defaultdict(Decimal)
+    daily_fee = defaultdict(Decimal)
+    daily_tax = defaultdict(Decimal)
     for tx in transactions:
         amt = tx.amount if tx.type in ['deposit', 'transfer_in', 'dividien', 'interest', 'sell'] else -tx.amount
-        daily_changes[tx.date] += amt
+        daily_changes[tx.date] += amt - tx.fee - tx.tax
+        daily_fee[tx.date] += tx.fee
+        daily_tax[tx.date] += tx.tax
 
     # Tính balance theo ngày tuần tự từ start_date đến ngày cuối cùng có transaction
     current_date = start_date
@@ -47,10 +54,12 @@ def recalc_account_balance_from_date(account, start_date):
 
     while current_date <= last_date:
         balance += daily_changes[current_date]  # cộng thay đổi ngày hiện tại (0 nếu ko có)
+        fee += daily_fee[current_date]
+        tax += daily_tax[current_date]
         AccountBalance.objects.update_or_create(
             account=account,
             date=current_date,
-            defaults={'balance': balance}
+            defaults={'balance': balance, 'fee': fee, 'tax': tax}
         )
         current_date += timedelta(days=1)
 
@@ -80,23 +89,31 @@ def accounts_view(request):
                 recalc_account_balance_from_date(transaction.account, transaction.date)
                 return redirect('accounts')
 
-    # GET hoặc invalid form vẫn đến đây
-    accounts = Account.objects.filter(user=request.user).prefetch_related('balances')
-    for account in accounts:
-        # lọc balance trước hoặc bằng hôm nay, lấy ngày mới nhất
-        latest_balance = (
+    accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances')
+    for account in accounts_list:
+        latest = (
             account.balances
             .filter(date__lte=date.today())
             .order_by('-date')
             .first()
         )
-        account.last_balance = latest_balance.balance if latest_balance else 0
-    transactions = Transaction.objects.filter(user=request.user)
+        account.last_balance = latest.balance if latest else 0
+        account.last_fee = latest.fee if latest else 0
+        account.last_tax = latest.tax if latest else 0
+
+    paginator = Paginator(accounts_list, 10)  # 10 per page
+    page_number = request.GET.get('page')
+    accounts_page = paginator.get_page(page_number) 
+
+    transaction_list = Transaction.objects.filter(user=request.user).order_by('-date')
+    transactions_paginator = Paginator(transaction_list, 10)
+    transactions_page = transactions_paginator.get_page(request.GET.get('txn_page'))
+
     svg_content = get_icons_svg()
 
     return render(request, 'accounts.html', {
-        'accounts': accounts,
-        'transactions' : transactions,
+        'accounts': accounts_page,
+        'transactions' : transactions_page,
         'form': form,
         'transaction_form': t_form,
         'icons_svg': svg_content,

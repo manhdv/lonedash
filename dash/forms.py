@@ -17,11 +17,13 @@ class AccountForm(forms.ModelForm):
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['account', 'type', 'amount', 'date', 'description']
+        fields = ['account', 'type', 'amount', 'fee', 'tax', 'date', 'description']
         widgets = {
             'account': forms.Select(attrs={'class': 'form-select'}),
             'type': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fee': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tax': forms.NumberInput(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }

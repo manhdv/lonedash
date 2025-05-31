@@ -70,6 +70,8 @@ class AccountBalance(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='balances')
     date = models.DateField(default=date.today)
     balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
     class Meta:
         unique_together = ('account', 'date')  # 1 balance / day
@@ -93,6 +95,8 @@ class Transaction(models.Model):
         ('sell', 'Sell')
     ])
     amount = models.DecimalField(max_digits=16, decimal_places=2)
+    fee = models.DecimalField(max_digits=16, decimal_places=2)
+    tax = models.DecimalField(max_digits=16, decimal_places=2)
     currency = models.CharField(max_length=50, default='USD')
     date = models.DateField(default=date.today)
     description = models.TextField(blank=True)
