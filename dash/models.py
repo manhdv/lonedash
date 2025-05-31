@@ -89,6 +89,8 @@ class Transaction(models.Model):
         ('dividien', 'Dividien'),
         ('interest', 'Interest'),
         ('fee', 'Fee'),
+        ('buy', 'Buy'),
+        ('sell', 'Sell')
     ])
     amount = models.DecimalField(max_digits=16, decimal_places=2)
     currency = models.CharField(max_length=50, default='USD')
