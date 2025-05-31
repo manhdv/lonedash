@@ -29,7 +29,7 @@
           <td>{{ account.name }}</td>
           <td>{{ account.get_type_display }}</td>
           <td>{{ account.currency }}</td>
-          <td>{{ account.balance|floatformat:2 }}</td>
+          <td>{{ account.last_balance }}</td>
         </tr>
         {% empty %}
         <tr>
@@ -98,6 +98,9 @@
     </div>
   </div>
 </div>
+
+
+
 
 <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionLabel" aria-hidden="true">
   <div class="modal-dialog">

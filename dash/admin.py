@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction
+from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance
 # Register your models here.
 
 @admin.register(Country)
@@ -31,4 +31,11 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display = ('date', 'type', 'amount', 'currency', 'account', 'user')
     list_filter = ('type', 'date', 'currency')
     search_fields = ('description', 'account__name', 'user__username')
+    ordering = ('-date',)
+
+@admin.register(AccountBalance)
+class AccountBalanceAdmin(admin.ModelAdmin):
+    list_display = ('account', 'date', 'balance')
+    list_filter = ('account', 'date')
+    search_fields = ('account__name',)
     ordering = ('-date',)

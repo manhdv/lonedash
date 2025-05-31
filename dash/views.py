@@ -2,11 +2,20 @@ from django.shortcuts import render, redirect
 from dash.models import EconomicData, Country
 from django.db.models import Max
 import os
-from .models import Account, Transaction
+from .models import Account, Transaction, AccountBalance
 from .forms import AccountForm, TransactionForm
 from django.db.models import Sum, Case, When, F, DecimalField
 from collections import defaultdict
-from datetime import timedelta
+from datetime import timedelta, date
+
+from decimal import Decimal
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import logout
+
+
 # Create your views here.
 def get_icons_svg():
     current_dir = os.path.dirname(__file__)
@@ -27,7 +36,7 @@ def recalc_account_balance_from_date(account, start_date):
     balance = prev_balance_obj.balance if prev_balance_obj else 0
 
     # Dùng dict để cộng balance theo từng ngày
-    daily_changes = defaultdict(float)
+    daily_changes = defaultdict(Decimal)
     for tx in transactions:
         amt = tx.amount if tx.type in ['deposit', 'transfer_in', 'dividien', 'interest'] else -tx.amount
         daily_changes[tx.date] += amt
@@ -45,10 +54,11 @@ def recalc_account_balance_from_date(account, start_date):
         )
         current_date += timedelta(days=1)
 
-
+@login_required(login_url='login')
 def dash_view(request):
     return render(request, 'dash.html', {'icons_svg': get_icons_svg()})
 
+@login_required(login_url='login') 
 def accounts_view(request):
     form = AccountForm()
     t_form = TransactionForm(user=request.user)
@@ -68,10 +78,19 @@ def accounts_view(request):
                 transaction.user = request.user
                 transaction.save()
                 recalc_account_balance_from_date(transaction.account, transaction.date)
-                return redirect('accounts')  # 🔁 redirect tránh resubmit
+                return redirect('accounts')
 
     # GET hoặc invalid form vẫn đến đây
-    accounts = Account.objects.filter(user=request.user)
+    accounts = Account.objects.filter(user=request.user).prefetch_related('balances')
+    for account in accounts:
+        # lọc balance trước hoặc bằng hôm nay, lấy ngày mới nhất
+        latest_balance = (
+            account.balances
+            .filter(date__lte=date.today())
+            .order_by('-date')
+            .first()
+        )
+        account.last_balance = latest_balance.balance if latest_balance else 0
     transactions = Transaction.objects.filter(user=request.user)
     svg_content = get_icons_svg()
 
@@ -83,3 +102,17 @@ def accounts_view(request):
         'icons_svg': svg_content,
     })
 
+def login_view(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        return redirect(request.GET.get('next', 'accounts'))
+
+    return render(request, 'login.html', {'form': form})
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')

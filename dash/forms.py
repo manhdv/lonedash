@@ -1,6 +1,7 @@
 # forms.py
 from django import forms
 from .models import Account, Transaction
+from datetime import date, timedelta
 
 class AccountForm(forms.ModelForm):
     class Meta:
@@ -29,3 +30,9 @@ class TransactionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user is not None:
             self.fields['account'].queryset = Account.objects.filter(user=user)
+    
+    def clean_date(self):
+        d = self.cleaned_data.get('date')
+        if d and d < date.today() - timedelta(days=90):
+            raise forms.ValidationError("Không chấp nhận giao dịch quá 3 tháng trước.")
+        return d

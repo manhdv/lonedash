@@ -1,0 +1,24 @@
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+</head>
+
+<body>
+    <h2>Login</h2>
+
+    {% if form.errors %}
+    <p style="color:red;">Sai username hoặc password.</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.username.label_tag }} {{ form.username }}<br><br>
+        {{ form.password.label_tag }} {{ form.password }}<br><br>
+        <button type="submit">Login</button>
+    </form>
+</body>
+
+</html>
