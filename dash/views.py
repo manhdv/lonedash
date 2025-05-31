@@ -38,7 +38,7 @@ def recalc_account_balance_from_date(account, start_date):
     # Dùng dict để cộng balance theo từng ngày
     daily_changes = defaultdict(Decimal)
     for tx in transactions:
-        amt = tx.amount if tx.type in ['deposit', 'transfer_in', 'dividien', 'interest'] else -tx.amount
+        amt = tx.amount if tx.type in ['deposit', 'transfer_in', 'dividien', 'interest', 'sell'] else -tx.amount
         daily_changes[tx.date] += amt
 
     # Tính balance theo ngày tuần tự từ start_date đến ngày cuối cùng có transaction
