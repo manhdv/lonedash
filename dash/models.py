@@ -41,7 +41,7 @@ class EconomicData(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE)
     date = models.DateField()
-    value = models.DecimalField(max_digits=20, decimal_places=4)
+    value = models.DecimalField(max_digits=20, decimal_places=2)
 
     class Meta:
         unique_together = ('country', 'indicator', 'date')
@@ -90,9 +90,7 @@ class Transaction(models.Model):
         ('transfer_out', 'Transfer Out'),
         ('dividien', 'Dividien'),
         ('interest', 'Interest'),
-        ('fee', 'Fee'),
-        ('buy', 'Buy'),
-        ('sell', 'Sell')
+        ('fee', 'Fee')
     ])
     amount = models.DecimalField(max_digits=16, decimal_places=2)
     fee = models.DecimalField(max_digits=16, decimal_places=2)
@@ -104,8 +102,53 @@ class Transaction(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def net_amount(self):
+        money_in = ['deposit', 'transfer_in', 'dividien', 'interest']
+        money_out = ['withdrawal', 'transfer_out', 'fee']
+
+        if self.type in money_in:
+            return self.amount - self.fee - self.tax
+        elif self.type in money_out:
+            return -(self.amount + self.fee + self.tax)
+        else:
+            return Decimal('0.0')  # hoặc raise nếu có loại lạ
+
     def __str__(self):
         return f"{self.date} - {self.type} - {self.amount}"
+
+class Trade(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='trade')
+
+    security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='trade')
+    type = models.CharField(max_length=4, choices=[
+        ('buy', 'Buy'),
+        ('sell', 'Sell'),
+    ])
+
+    quantity = models.DecimalField(max_digits=16, decimal_places=2)
+    price = models.DecimalField(max_digits=16, decimal_places=2)
+    amount = models.DecimalField(max_digits=16, decimal_places=2)
+    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+    currency = models.CharField(max_length=10, default='USD')
+    date = models.DateField(default=date.today)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-date']
+
+    @property
+    def gross_amount(self):
+        return self.quantity * self.price
+
+    @property
+    def net_amount(self):
+        return self.gross_amount - self.fee - self.tax
+
+    def __str__(self):
+        return f"{self.date} - {self.type.upper()} {self.quantity} x {self.security.code} @ {self.price}"
 
 class Security(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security')
@@ -137,7 +180,7 @@ class Security(models.Model):
 
 
 class SecurityPrice(models.Model):
-    security = models.ForeignKey(Security, on_delete=models.CASCADE, default=1)
+    security = models.ForeignKey('Security', on_delete=models.CASCADE, default=1)
     date = models.DateField(default=date.today)
     open = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     high = models.DecimalField(max_digits=16, decimal_places=2, default=0)

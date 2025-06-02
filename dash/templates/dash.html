@@ -149,3 +149,8 @@
 </main>
 
 {% endblock %}
+
+{% block page_scripts %}
+{% load static %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

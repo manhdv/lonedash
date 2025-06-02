@@ -13,6 +13,10 @@ class AccountForm(forms.ModelForm):
             'currency': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs['id'] = f'id_account_{name}'
 
 class TransactionForm(forms.ModelForm):
     class Meta:
@@ -30,6 +34,8 @@ class TransactionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs['id'] = f'id_transaction_{name}'
         if user is not None:
             self.fields['account'].queryset = Account.objects.filter(user=user)
     

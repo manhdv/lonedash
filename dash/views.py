@@ -23,10 +23,6 @@ def get_icons_svg():
     with open(svg_path, 'r', encoding='utf-8') as f:
         return f.read()
 
-
-
-
-
 def recalc_account_balance_from_date(account, start_date):
     # Lấy tất cả transaction từ start_date trở đi, theo ngày tăng dần
     transactions = account.transaction.filter(date__gte=start_date).order_by('date')
@@ -43,8 +39,7 @@ def recalc_account_balance_from_date(account, start_date):
     daily_fee = defaultdict(Decimal)
     daily_tax = defaultdict(Decimal)
     for tx in transactions:
-        amt = tx.amount if tx.type in ['deposit', 'transfer_in', 'dividien', 'interest', 'sell'] else -tx.amount
-        daily_changes[tx.date] += amt - tx.fee - tx.tax
+        daily_changes[tx.date] += tx.net_amount()
         daily_fee[tx.date] += tx.fee
         daily_tax[tx.date] += tx.tax
 
@@ -81,7 +76,14 @@ def accounts_view(request):
                 new_account.save()
                 return redirect('accounts')  # 🔁 redirect tránh resubmit
         elif 'transaction_submit' in request.POST:
-            t_form = TransactionForm(request.POST, user=request.user)
+            txn_id = request.POST.get('transaction_id')
+            instance = None
+            if txn_id:
+                try:
+                    instance = Transaction.objects.get(pk=txn_id, user=request.user)
+                except Transaction.DoesNotExist:
+                    instance = None  # fallback tạo mới
+            t_form = TransactionForm(request.POST, user=request.user, instance=instance)
             if t_form.is_valid():
                 transaction = t_form.save(commit=False)
                 transaction.user = request.user
@@ -105,7 +107,7 @@ def accounts_view(request):
     page_number = request.GET.get('page')
     accounts_page = paginator.get_page(page_number) 
 
-    transaction_list = Transaction.objects.filter(user=request.user).order_by('-date')
+    transaction_list = Transaction.objects.filter(user=request.user).order_by('-id')
     transactions_paginator = Paginator(transaction_list, 10)
     transactions_page = transactions_paginator.get_page(request.GET.get('txn_page'))
 

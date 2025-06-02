@@ -5,12 +5,12 @@
 {% block content %}
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Accounts</h2>
-  <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#addAccountModal">
-    + Add New
-  </button>
-</div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Accounts</h2>
+    <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+      + Add New
+    </button>
+  </div>
   <div class="table-responsive small">
     <table class="table table-striped table-sm">
       <thead>
@@ -46,29 +46,29 @@
   <nav>
     <ul class="pagination pagination-sm justify-content-center">
       {% if accounts.has_previous %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ accounts.previous_page_number }}">Previous</a>
-        </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ accounts.previous_page_number }}">Previous</a>
+      </li>
       {% else %}
-        <li class="page-item disabled">
-          <span class="page-link">Previous</span>
-        </li>
+      <li class="page-item disabled">
+        <span class="page-link">Previous</span>
+      </li>
       {% endif %}
 
       {% for num in accounts.paginator.page_range %}
-        <li class="page-item {% if accounts.number == num %}active{% endif %}">
-          <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-        </li>
+      <li class="page-item {% if accounts.number == num %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
       {% endfor %}
 
       {% if accounts.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ accounts.next_page_number }}">Next</a>
-        </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ accounts.next_page_number }}">Next</a>
+      </li>
       {% else %}
-        <li class="page-item disabled">
-          <span class="page-link">Next</span>
-        </li>
+      <li class="page-item disabled">
+        <span class="page-link">Next</span>
+      </li>
       {% endif %}
     </ul>
   </nav>
@@ -90,18 +90,34 @@
           <th scope="col">Fee</th>
           <th scope="col">Tax</th>
           <th scope="col">Account</th>
+          <th scope="col">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for transaction in transactions %}
         <tr>
-          <td>{{ forloop.counter }}</td>
+          <td>{{ transaction.id }}</td>
           <td>{{ transaction.date }}</td>
           <td>{{ transaction.get_type_display }}</td>
           <td>{{ transaction.amount|floatformat:2 }}</td>
           <td>{{ transaction.fee|floatformat:2 }}</td>
           <td>{{ transaction.tax|floatformat:2 }}</td>
           <td>{{ transaction.account }}</td>
+          <td>
+            <button class="btn btn-sm btn-link edit-transaction-btn"
+              data-id="{{ transaction.id }}"
+              data-account="{{ transaction.account.id }}"
+              data-type="{{ transaction.type }}"
+              data-amount="{{ transaction.amount }}"
+              data-fee="{{ transaction.fee }}"
+              data-tax="{{ transaction.tax }}"
+              data-date="{{ transaction.date|date:'Y-m-d' }}"
+              data-description="{{ transaction.description|escape }}"
+            >
+              Edit
+            </button>
+            <button class="btn btn-sm btn-link" data-id="{{ transaction.id }}">Delete</button>
+          </td>
         </tr>
         {% empty %}
         <tr>
@@ -115,25 +131,25 @@
   <nav>
     <ul class="pagination pagination-sm justify-content-center">
       {% if transactions.has_previous %}
-        <li class="page-item">
-          <a class="page-link" href="?txn_page={{ transactions.previous_page_number }}">Previous</a>
-        </li>
+      <li class="page-item">
+        <a class="page-link" href="?txn_page={{ transactions.previous_page_number }}">Previous</a>
+      </li>
       {% else %}
-        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      <li class="page-item disabled"><span class="page-link">Previous</span></li>
       {% endif %}
 
       {% for num in transactions.paginator.page_range %}
-        <li class="page-item {% if transactions.number == num %}active{% endif %}">
-          <a class="page-link" href="?txn_page={{ num }}">{{ num }}</a>
-        </li>
+      <li class="page-item {% if transactions.number == num %}active{% endif %}">
+        <a class="page-link" href="?txn_page={{ num }}">{{ num }}</a>
+      </li>
       {% endfor %}
 
       {% if transactions.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="?txn_page={{ transactions.next_page_number }}">Next</a>
-        </li>
+      <li class="page-item">
+        <a class="page-link" href="?txn_page={{ transactions.next_page_number }}">Next</a>
+      </li>
       {% else %}
-        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      <li class="page-item disabled"><span class="page-link">Next</span></li>
       {% endif %}
     </ul>
   </nav>
@@ -145,12 +161,14 @@
     <div class="modal-content">
       <form method="post">
         {% csrf_token %}
+        
         <div class="modal-header">
           <h5 class="modal-title" id="addAccountLabel">New Account</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          {{ form.as_p }}  <!-- hoặc render thủ công từng field nếu muốn -->
+
+          {{ form.as_p }} <!-- hoặc render thủ công từng field nếu muốn -->
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary" name="account_submit">Save</button>
@@ -160,9 +178,6 @@
     </div>
   </div>
 </div>
-
-
-
 
 <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -174,6 +189,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
+          <input type="hidden" id="id_transaction_id" name="transaction_id" value="">
           {{ transaction_form.as_p }}
         </div>
         <div class="modal-footer">
@@ -184,5 +200,41 @@
     </div>
   </div>
 </div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+  $('.edit-transaction-btn').click(function() {
+    const btn = $(this);
+    console.log('Edit button clicked', btn.data());
+    $('#id_transaction_id').val(btn.data('id'));
+    $('#id_transaction_account').val(btn.data('account'));
+    $('#id_transaction_type').val(btn.data('type'));
+
+    console.log($('#id_type').val());
+    console.log(btn.data('type')  );
+    $('#id_transaction_amount').val(btn.data('amount'));
+    $('#id_transaction_fee').val(btn.data('fee'));
+    $('#id_transaction_tax').val(btn.data('tax'));
+    $('#id_transaction_date').val(btn.data('date'));
+    $('#id_transaction_description').val(btn.data('description'));
+
+    $('#addTransactionLabel').text('Edit Transaction');
+    new bootstrap.Modal(document.getElementById('addTransactionModal')).show();
+  });
+
+</script>
+
+{% if transaction_form.errors %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      var modal = new bootstrap.Modal(document.getElementById('addTransactionModal'));
+      modal.show();
+    }, 100); // delay tí cho chắc
+  });
+</script>
+{% endif %}
 
 {% endblock %}
