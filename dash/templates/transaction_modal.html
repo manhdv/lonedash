@@ -1,0 +1,20 @@
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="transaction-form" method="post" action="{% if transaction_form.instance.pk %}{% url 'transaction_edit' transaction_form.instance.pk %}{% else %}{% url 'transaction_new' %}{% endif %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addTransactionLabel">New Transaction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          {{ transaction_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" name="transaction_submit">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -42,5 +42,5 @@ class TransactionForm(forms.ModelForm):
     def clean_date(self):
         d = self.cleaned_data.get('date')
         if d and d < date.today() - timedelta(days=90):
-            raise forms.ValidationError("Không chấp nhận giao dịch quá 3 tháng trước.")
+            raise forms.ValidationError("Not allow to add/edit old transaction.")
         return d

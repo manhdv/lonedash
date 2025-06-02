@@ -92,9 +92,9 @@ class Transaction(models.Model):
         ('interest', 'Interest'),
         ('fee', 'Fee')
     ])
-    amount = models.DecimalField(max_digits=16, decimal_places=2)
-    fee = models.DecimalField(max_digits=16, decimal_places=2)
-    tax = models.DecimalField(max_digits=16, decimal_places=2)
+    amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     currency = models.CharField(max_length=50, default='USD')
     date = models.DateField(default=date.today)
     description = models.TextField(blank=True)

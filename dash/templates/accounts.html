@@ -75,7 +75,7 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Transactions</h2>
-    <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+    <button type="button" class="btn btn-sm btn-link" id="add-transaction-btn">
       + Add Transaction
     </button>
   </div>
@@ -116,12 +116,16 @@
             >
               Edit
             </button>
-            <button class="btn btn-sm btn-link" data-id="{{ transaction.id }}">Delete</button>
+            <button class="btn btn-sm btn-link text-danger delete-transaction-btn" data-id="{{ transaction.id }}">Delete</button>
+            <form method="post" action="{% url 'transaction_delete' %}" id="deleteTransactionForm" style="display:none;">
+              {% csrf_token %}
+              <input type="hidden" name="transaction_id" id="deleteTransactionId">
+            </form>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center">No accounts found.</td>
+          <td colspan="8" class="text-center">No transaction found.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -179,62 +183,42 @@
   </div>
 </div>
 
-<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addTransactionLabel">New Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="id_transaction_id" name="transaction_id" value="">
-          {{ transaction_form.as_p }}
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary" name="transaction_submit">Save</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
+<div id="modal-container"></div>
 {% endblock %}
 
 {% block page_scripts %}
 <script>
-  $('.edit-transaction-btn').click(function() {
-    const btn = $(this);
-    console.log('Edit button clicked', btn.data());
-    $('#id_transaction_id').val(btn.data('id'));
-    $('#id_transaction_account').val(btn.data('account'));
-    $('#id_transaction_type').val(btn.data('type'));
+$('.delete-transaction-btn').click(function() {
+  const txId = $(this).data('id');
+  if (confirm('Are you sure you want to delete this transaction?')) {
+    $('#deleteTransactionId').val(txId);
+    $('#deleteTransactionForm').submit();
+  }
+});
 
-    console.log($('#id_type').val());
-    console.log(btn.data('type')  );
-    $('#id_transaction_amount').val(btn.data('amount'));
-    $('#id_transaction_fee').val(btn.data('fee'));
-    $('#id_transaction_tax').val(btn.data('tax'));
-    $('#id_transaction_date').val(btn.data('date'));
-    $('#id_transaction_description').val(btn.data('description'));
 
-    $('#addTransactionLabel').text('Edit Transaction');
-    new bootstrap.Modal(document.getElementById('addTransactionModal')).show();
-  });
-
-</script>
-
-{% if transaction_form.errors %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(function () {
-      var modal = new bootstrap.Modal(document.getElementById('addTransactionModal'));
+  $('#add-transaction-btn').on('click', function(){
+    $.get('/transactions/new', function(data){
+      $('#modal-container').html(data);
+      var modalEl = document.getElementById('addTransactionModal');
+      var modal = new bootstrap.Modal(modalEl);
       modal.show();
-    }, 100); // delay tí cho chắc
+    });
   });
-</script>
-{% endif %}
 
+  $('.edit-transaction-btn').on('click', function() {
+  const txId = $(this).data('id');
+  $.get(`/transactions/edit/${txId}`, function(data) {
+    $('#modal-container').html(data);
+    const modalEl = document.getElementById('addTransactionModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  });
+});
+
+
+// Lưu ý: dùng delegation vì modal được load động
+
+
+</script>
 {% endblock %}

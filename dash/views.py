@@ -1,20 +1,20 @@
-from django.shortcuts import render, redirect
-from dash.models import EconomicData, Country
-from django.db.models import Max
+from datetime import date, timedelta
+from decimal import Decimal
+from collections import defaultdict
 import os
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Max, Sum, Case, When, F, DecimalField
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST
+
+from dash.models import EconomicData, Country
 from .models import Account, Transaction, AccountBalance
 from .forms import AccountForm, TransactionForm
-from django.db.models import Sum, Case, When, F, DecimalField
-from collections import defaultdict
-from datetime import timedelta, date
 
-from decimal import Decimal
-
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import logout
-from django.core.paginator import Paginator
 
 # Create your views here.
 def get_icons_svg():
@@ -65,8 +65,6 @@ def dash_view(request):
 @login_required(login_url='login') 
 def accounts_view(request):
     form = AccountForm()
-    t_form = TransactionForm(user=request.user)
-
     if request.method == 'POST':
         if 'account_submit' in request.POST:
             form = AccountForm(request.POST)
@@ -75,23 +73,8 @@ def accounts_view(request):
                 new_account.user = request.user
                 new_account.save()
                 return redirect('accounts')  # 🔁 redirect tránh resubmit
-        elif 'transaction_submit' in request.POST:
-            txn_id = request.POST.get('transaction_id')
-            instance = None
-            if txn_id:
-                try:
-                    instance = Transaction.objects.get(pk=txn_id, user=request.user)
-                except Transaction.DoesNotExist:
-                    instance = None  # fallback tạo mới
-            t_form = TransactionForm(request.POST, user=request.user, instance=instance)
-            if t_form.is_valid():
-                transaction = t_form.save(commit=False)
-                transaction.user = request.user
-                transaction.save()
-                recalc_account_balance_from_date(transaction.account, transaction.date)
-                return redirect('accounts')
 
-    accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances')
+    accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances').order_by('id')
     for account in accounts_list:
         latest = (
             account.balances
@@ -117,7 +100,6 @@ def accounts_view(request):
         'accounts': accounts_page,
         'transactions' : transactions_page,
         'form': form,
-        'transaction_form': t_form,
         'icons_svg': svg_content,
     })
 
@@ -135,3 +117,46 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@login_required(login_url='login')
+@require_POST
+def transaction_delete(request):
+    tx_id = request.POST.get("transaction_id")
+    transaction = get_object_or_404(Transaction, id=tx_id, user=request.user)
+    transaction.delete()
+    recalc_account_balance_from_date(transaction.account, transaction.date)
+    return redirect('accounts')
+
+@login_required(login_url='login')
+def transaction_new(request):
+    if request.method == "POST":
+        form = TransactionForm(request.POST, user=request.user)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.user = request.user
+            transaction.save()
+            recalc_account_balance_from_date(transaction.account, transaction.date)
+            return redirect('accounts')
+        else:
+            # re-render the modal with errors
+            return render(request, 'transaction_modal.html', {'transaction_form': form})
+    else:
+        form = TransactionForm(user=request.user)
+    return render(request, 'transaction_modal.html', {'transaction_form': form})
+
+@login_required(login_url='login')
+def transaction_edit(request, tx_id):
+    transaction = get_object_or_404(Transaction, id=tx_id, user=request.user)
+    if request.method == "POST":
+        form = TransactionForm(request.POST, instance=transaction, user=request.user)
+        if form.is_valid():
+            form.save()
+            recalc_account_balance_from_date(transaction.account, transaction.date)
+            print ("render edit ok")
+            return redirect('accounts')
+        else:
+            print ("render edit error")
+            return render(request, 'transaction_modal.html', {'transaction_form': form})
+    else:
+        form = TransactionForm(instance=transaction, user=request.user)
+    return render(request, 'transaction_modal.html', {'transaction_form': form})
