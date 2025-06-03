@@ -2,6 +2,8 @@ from datetime import date, timedelta
 from decimal import Decimal
 from collections import defaultdict
 import os
+import requests
+
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Max, Sum, Case, When, F, DecimalField
@@ -12,8 +14,8 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 
-from dash.models import EconomicData, Country
-from .models import Account, Transaction, AccountBalance
+from .models import EconomicData, Country
+from .models import Account, Transaction, AccountBalance, Setting, Security
 from .forms import AccountForm, TransactionForm
 
 
@@ -65,16 +67,6 @@ def dash_view(request):
 
 @login_required(login_url='login') 
 def accounts_view(request):
-    form = AccountForm()
-    if request.method == 'POST':
-        if 'account_submit' in request.POST:
-            form = AccountForm(request.POST)
-            if form.is_valid():
-                new_account = form.save(commit=False)
-                new_account.user = request.user
-                new_account.save()
-                return redirect('accounts')  # 🔁 redirect tránh resubmit
-
     accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances').order_by('id')
     for account in accounts_list:
         latest = (
@@ -100,7 +92,6 @@ def accounts_view(request):
     return render(request, 'accounts.html', {
         'accounts': accounts_page,
         'transactions' : transactions_page,
-        'form': form,
         'icons_svg': svg_content,
     })
 
@@ -197,3 +188,70 @@ def account_edit(request, acc_id):
     else:
         form = AccountForm(instance=account)
     return render(request, 'account_modal.html', {'account_form': form})
+
+
+@login_required(login_url='login') 
+def securities_view(request):
+    securities_list = Security.objects.filter(user=request.user).order_by('-id')
+    securities_paginator = Paginator(securities_list, 10)
+    securities_page = securities_paginator.get_page(request.GET.get('page'))
+
+    svg_content = get_icons_svg()
+    return render(request, "securities.html", {'icons_svg': svg_content, 'securities' : securities_page,})
+
+@login_required(login_url='login') 
+def securities_search(request):
+    q = request.GET.get('q', '')
+    if not q:
+        return JsonResponse({'error': 'Missing query parameter'}, status=400)
+
+    url = 'https://query1.finance.yahoo.com/v1/finance/search'
+    params = {'q': q}
+    headers = {
+        'User-Agent': 'Mozilla/5.0'  # fake UA tránh bị block
+    }
+
+    resp = requests.get(url, params=params, headers=headers, verify=False)
+    if resp.status_code != 200:
+        return JsonResponse({'error': 'Yahoo API error'}, status=resp.status_code)
+
+    return JsonResponse(resp.json())
+
+
+@require_POST
+@login_required(login_url='login') 
+def securities_add(request):
+    data = request.POST
+    code = data.get('code')
+    exchange = data.get('exchange')
+    name = data.get('name')
+    type_ = data.get('type')
+    country_name = data.get('country')
+    api_source = data.get('api_source')
+
+    # Handle country
+    country_obj, _ = Country.objects.get_or_create(name=country_name or 'Unknown')
+
+    security, created = Security.objects.get_or_create(
+        user=request.user,
+        code=code,
+        defaults={
+            'exchange': exchange,
+            'name': name,
+            'type': type_,
+            'country': country_obj,
+            'api_source': api_source,
+        }
+    )
+    return JsonResponse({'status': 'ok' if created else 'exists'})
+
+@login_required(login_url='login') 
+def settings_view(request):
+    obj, _ = Setting.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        obj.key_yahoo = request.POST.get('key_yahoo', '').strip()
+        obj.key_eodhd = request.POST.get('key_eodhd', '').strip()
+        obj.save()
+        return redirect('settings') 
+    svg_content = get_icons_svg()
+    return render(request, "settings.html", {'icons_svg': svg_content, 'key_yahoo': obj.key_yahoo, 'key_eodhd': obj.key_eodhd,})

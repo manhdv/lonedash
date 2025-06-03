@@ -6,11 +6,11 @@ from datetime import date
 class Setting(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)  # Tham chiếu đến User
 
-    finhub_api_key = models.CharField(max_length=255, blank=True, null=True)
-    alpha_vantage_api_key = models.CharField(max_length=255, blank=True, null=True)
-    eodhd_api_key = models.CharField(max_length=255, blank=True, null=True)
-    yahoo_finance_api_key = models.CharField(max_length=255, blank=True, null=True)
-    google_map_api_key = models.CharField(max_length=255, blank=True, null=True)
+    key_finhub= models.CharField(max_length=255, blank=True, null=True)
+    key_alpha_vantage = models.CharField(max_length=255, blank=True, null=True)
+    key_eodhd = models.CharField(max_length=255, blank=True, null=True)
+    key_yahoo = models.CharField(max_length=255, blank=True, null=True)
+    key_google_map = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -65,6 +65,9 @@ class Account(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.currency}"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 class AccountBalance(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='balances')
@@ -151,19 +154,19 @@ class Trade(models.Model):
         return f"{self.date} - {self.type.upper()} {self.quantity} x {self.security.code} @ {self.price}"
 
 class Security(models.Model):
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security')
     code = models.CharField(max_length=10)
     exchange = models.CharField(max_length=20)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, blank=True)  
-    country = models.CharField(max_length=50, default='US')
-    currency = models.CharField(max_length=50, default='USD')
     isin = models.CharField(max_length=20, blank=True)
     close = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     date = models.DateField(default=date.today)
     is_active = models.BooleanField(default=True)
 
     # metadata
+    api_source = models.CharField(max_length=50, blank=True, null=True)
     industry = models.CharField(max_length=100, blank=True)
     sector = models.CharField(max_length=100, blank=True)
     website = models.URLField(blank=True)
