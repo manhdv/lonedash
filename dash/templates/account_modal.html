@@ -2,7 +2,7 @@
 <div class="modal fade" id="addAccountModal" tabindex="-1" aria-labelledby="addAccountLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" action="{% if account_form.instance.pk %}{% url 'account_edit' account_form.instance.pk %}{% else %}{% url 'account_new' %}{% endif %}">
+      <form id="account-form" method="post" action="{% if account_form.instance.pk %}{% url 'account_edit' account_form.instance.pk %}{% else %}{% url 'account_new' %}{% endif %}">
         {% csrf_token %}
         
         <div class="modal-header">
@@ -11,7 +11,7 @@
         </div>
         <div class="modal-body">
 
-          {{ form.as_p }} <!-- hoặc render thủ công từng field nếu muốn -->
+          {{ account_form.as_p }} <!-- hoặc render thủ công từng field nếu muốn -->
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary" name="account_submit">Save</button>

@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 
 from dash.models import EconomicData, Country
 from .models import Account, Transaction, AccountBalance
@@ -136,10 +137,10 @@ def transaction_new(request):
             transaction.user = request.user
             transaction.save()
             recalc_account_balance_from_date(transaction.account, transaction.date)
-            return redirect('accounts')
+            return JsonResponse({'success': True, 'id': transaction.id})
         else:
             # re-render the modal with errors
-            return render(request, 'transaction_modal.html', {'transaction_form': form})
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = TransactionForm(user=request.user)
     return render(request, 'transaction_modal.html', {'transaction_form': form})
@@ -152,11 +153,47 @@ def transaction_edit(request, tx_id):
         if form.is_valid():
             form.save()
             recalc_account_balance_from_date(transaction.account, transaction.date)
-            print ("render edit ok")
-            return redirect('accounts')
+            return JsonResponse({'success': True, 'id': transaction.id})
         else:
-            print ("render edit error")
-            return render(request, 'transaction_modal.html', {'transaction_form': form})
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = TransactionForm(instance=transaction, user=request.user)
     return render(request, 'transaction_modal.html', {'transaction_form': form})
+
+@login_required(login_url='login')
+@require_POST
+def account_delete(request):
+    acc_id = request.POST.get("account_id")
+    account = get_object_or_404(Account, id=acc_id, user=request.user)
+    account.delete()
+    return redirect('accounts')
+
+@login_required(login_url='login')
+def account_new(request):
+    if request.method == "POST":
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            account = form.save(commit=False)
+            account.user = request.user
+            account.save()
+            return JsonResponse({'success': True, 'id': account.id})
+        else:
+            # re-render the modal with errors
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    else:
+        form = AccountForm()
+    return render(request, 'account_modal.html', {'account_form': form})
+
+@login_required(login_url='login')
+def account_edit(request, acc_id):
+    account = get_object_or_404(Account, id=acc_id, user=request.user)
+    if request.method == "POST":
+        form = AccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'id': account.id})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+    else:
+        form = AccountForm(instance=account)
+    return render(request, 'account_modal.html', {'account_form': form})
