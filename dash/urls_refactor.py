@@ -33,7 +33,7 @@ urlpatterns = [
 urlpatterns += [
     # API endpoints
     path('api/transactions/', transaction_create, name='api_transaction_create'),  # POST
-    path('api/transactions/<int:tx_id>/', transaction_update, name='api_transaction_update'),  # PUT/PATCH
+    path('api/transactions/<int:tx_id>/', transaction_update, name='api_transaction_update'),  # PUT, PATCH, DELETE
 
     path('api/securities/search/', securities_search, name='api_securities_search'),
     path('api/securities/add/', securities_add, name='api_securities_add'),

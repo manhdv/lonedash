@@ -3,6 +3,7 @@ from decimal import Decimal
 from collections import defaultdict
 import os
 import requests
+import json
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,7 +12,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST,require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
 from .models import EconomicData, Country
@@ -110,19 +112,16 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required(login_url='login')
-@require_POST
-def transaction_delete(request):
-    tx_id = request.POST.get("transaction_id")
-    transaction = get_object_or_404(Transaction, id=tx_id, user=request.user)
-    transaction.delete()
-    recalc_account_balance_from_date(transaction.account, transaction.date)
-    return redirect('accounts')
 
 @login_required(login_url='login')
 def transaction_new(request):
     if request.method == "POST":
-        form = TransactionForm(request.POST, user=request.user)
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+
+        form = TransactionForm(data, user=request.user)
         if form.is_valid():
             transaction = form.save(commit=False)
             transaction.user = request.user
@@ -130,26 +129,54 @@ def transaction_new(request):
             recalc_account_balance_from_date(transaction.account, transaction.date)
             return JsonResponse({'success': True, 'id': transaction.id})
         else:
-            # re-render the modal with errors
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
-        form = TransactionForm(user=request.user)
-    return render(request, 'transaction_modal.html', {'transaction_form': form})
+        return HttpResponseNotAllowed(['POST'])
+
 
 @login_required(login_url='login')
-def transaction_edit(request, tx_id):
+def transaction_edit_form(request, tx_id):
     transaction = get_object_or_404(Transaction, id=tx_id, user=request.user)
-    if request.method == "POST":
-        form = TransactionForm(request.POST, instance=transaction, user=request.user)
+    form = TransactionForm(instance=transaction, user=request.user)
+    return render(request, 'transaction_modal.html', {
+        'transaction_form': form
+    })
+
+@login_required(login_url='login')
+def transaction_create_form(request):
+    form = TransactionForm(user=request.user)
+    return render(request, 'transaction_modal.html', {
+        'transaction_form': form
+    })
+
+@csrf_exempt  # Hoặc dùng @csrf_protect nếu gọi từ JS có CSRF token
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
+@login_required(login_url='login')
+def transaction_update(request, tx_id):
+    transaction = get_object_or_404(Transaction, id=tx_id, user=request.user)
+
+    if request.method in ["PUT", "PATCH"]:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+
+        form = TransactionForm(data, instance=transaction, user=request.user)
         if form.is_valid():
             form.save()
             recalc_account_balance_from_date(transaction.account, transaction.date)
             return JsonResponse({'success': True, 'id': transaction.id})
-        else:
-            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    elif request.method == "DELETE":
+        recalc_date = transaction.date
+        account = transaction.account
+        transaction.delete()
+        recalc_account_balance_from_date(account, recalc_date)
+        return JsonResponse({'success': True})
+
     else:
-        form = TransactionForm(instance=transaction, user=request.user)
-    return render(request, 'transaction_modal.html', {'transaction_form': form})
+        return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
 @login_required(login_url='login')
 @require_POST
