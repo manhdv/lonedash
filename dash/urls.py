@@ -6,15 +6,20 @@ from .views import (
     settings_view,
     login_view,
     logout_view,
-    transaction_new,
     account_delete,
-    account_edit,
-    account_new,
+    account_edit_form,
+    account_create_form,
     securities_search,
     securities_add,
-    transaction_update,
     transaction_create_form,
     transaction_edit_form
+)
+
+from .apis import (
+    transaction_create_api,
+    transaction_update_api,
+    account_create_api,
+    account_update_api
 )
 
 #Views
@@ -35,18 +40,19 @@ urlpatterns = [
 #Forms
 urlpatterns += [
     path('transaction/create/', transaction_create_form, name='transaction_create_form'),
-    path('transaction/edit/<int:tx_id>/', transaction_edit_form, name='transaction_edit_form'),
+    path('transaction/edit/<int:id>/', transaction_edit_form, name='transaction_edit_form'),
+
+    path('account/create/', account_create_form, name='account_create_form'),
+    path('account/edit/<int:id>/', account_edit_form, name='account_edit_form'),
 ]
 
 #Apis
 urlpatterns += [
-    path('api/transaction/create/', transaction_new, name='api_transaction_create'),
-    path('api/transaction/<int:tx_id>/', transaction_update, name='api_transaction_update'),  # PUT, PATCH, DELETE
+    path('api/transaction/create/', transaction_create_api, name='transaction_create_api'),
+    path('api/transaction/<int:id>/', transaction_update_api, name='transaction_update_api'),  # PUT, PATCH, DELETE
+    path('api/account/create/', account_create_api, name='account_create_api'),
+    path('api/account/<int:id>/', account_update_api, name='account_update_api'),  # PUT, PATCH, DELETE    
     
-    
-    path('account/delete/', account_delete, name='account_delete'),
-    path('account/new/', account_new, name='account_new'),
-    path('account/edit/<int:acc_id>/', account_edit, name='account_edit'),
     path('api/securities_search/', securities_search, name='securities_search'),
     path('api/securities_add/', securities_add, name='securities_add'),
 ]

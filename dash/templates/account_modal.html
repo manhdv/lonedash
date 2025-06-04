@@ -2,9 +2,7 @@
 <div class="modal fade" id="addAccountModal" tabindex="-1" aria-labelledby="addAccountLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="account-form" method="post" action="{% if account_form.instance.pk %}{% url 'account_edit' account_form.instance.pk %}{% else %}{% url 'account_new' %}{% endif %}">
-        {% csrf_token %}
-        
+      <form id="account-form" method="post" action="{% if account_form.instance.pk %}{% url 'account_update_api' account_form.instance.pk %}{% else %}{% url 'account_create_api' %}{% endif %}">        
         <div class="modal-header">
           <h5 class="modal-title" id="addAccountLabel">New Account</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
