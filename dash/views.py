@@ -86,14 +86,14 @@ def logout_view(request):
 def transaction_edit_form(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
     form = TransactionForm(instance=transaction, user=request.user)
-    return render(request, 'transaction_modal.html', {
+    return render(request, 'modals/transaction_modal.html', {
         'transaction_form': form
     })
 
 @login_required(login_url='login')
 def transaction_create_form(request):
     form = TransactionForm(user=request.user)
-    return render(request, 'transaction_modal.html', {
+    return render(request, 'modals/transaction_modal.html', {
         'transaction_form': form
     })
 
@@ -102,14 +102,14 @@ def transaction_create_form(request):
 def account_edit_form(request, id):
     account = get_object_or_404(Account, id=id)
     form = AccountForm(instance=account)
-    return render(request, 'account_modal.html', {
+    return render(request, 'modals/account_modal.html', {
         'account_form': form
     })
 
 @login_required(login_url='login')
 def account_create_form(request):
     form = AccountForm()
-    return render(request, 'account_modal.html', {
+    return render(request, 'modals/account_modal.html', {
         'account_form': form
     })
 
@@ -137,7 +137,7 @@ def account_new(request):
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = AccountForm()
-    return render(request, 'account_modal.html', {'account_form': form})
+    return render(request, 'modals/account_modal.html', {'account_form': form})
 
 @login_required(login_url='login')
 def account_edit(request, acc_id):
@@ -151,7 +151,7 @@ def account_edit(request, acc_id):
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = AccountForm(instance=account)
-    return render(request, 'account_modal.html', {'account_form': form})
+    return render(request, 'modals/account_modal.html', {'account_form': form})
 
 
 @login_required(login_url='login') 
@@ -163,51 +163,6 @@ def securities_view(request):
     svg_content = get_icons_svg()
     return render(request, "securities.html", {'icons_svg': svg_content, 'securities' : securities_page,})
 
-@login_required(login_url='login') 
-def securities_search(request):
-    q = request.GET.get('q', '')
-    if not q:
-        return JsonResponse({'error': 'Missing query parameter'}, status=400)
-
-    url = 'https://query1.finance.yahoo.com/v1/finance/search'
-    params = {'q': q}
-    headers = {
-        'User-Agent': 'Mozilla/5.0'  # fake UA tránh bị block
-    }
-
-    resp = requests.get(url, params=params, headers=headers, verify=False)
-    if resp.status_code != 200:
-        return JsonResponse({'error': 'Yahoo API error'}, status=resp.status_code)
-
-    return JsonResponse(resp.json())
-
-
-@require_POST
-@login_required(login_url='login') 
-def securities_add(request):
-    data = request.POST
-    code = data.get('code')
-    exchange = data.get('exchange')
-    name = data.get('name')
-    type_ = data.get('type')
-    country_name = data.get('country')
-    api_source = data.get('api_source')
-
-    # Handle country
-    country_obj, _ = Country.objects.get_or_create(name=country_name or 'Unknown')
-
-    security, created = Security.objects.get_or_create(
-        user=request.user,
-        code=code,
-        defaults={
-            'exchange': exchange,
-            'name': name,
-            'type': type_,
-            'country': country_obj,
-            'api_source': api_source,
-        }
-    )
-    return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @login_required(login_url='login') 
 def settings_view(request):
@@ -219,3 +174,7 @@ def settings_view(request):
         return redirect('settings') 
     svg_content = get_icons_svg()
     return render(request, "settings.html", {'icons_svg': svg_content, 'key_yahoo': obj.key_yahoo, 'key_eodhd': obj.key_eodhd,})
+
+@login_required(login_url='login')
+def security_search_form(request):
+    return render(request, 'modals/search_modal.html')

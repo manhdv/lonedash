@@ -9,17 +9,18 @@ from .views import (
     account_delete,
     account_edit_form,
     account_create_form,
-    securities_search,
-    securities_add,
     transaction_create_form,
-    transaction_edit_form
+    transaction_edit_form,
+    security_search_form
 )
 
 from .apis import (
     transaction_create_api,
     transaction_update_api,
     account_create_api,
-    account_update_api
+    account_update_api,
+    security_search_api,
+    securities_add_api
 )
 
 #Views
@@ -44,6 +45,8 @@ urlpatterns += [
 
     path('account/create/', account_create_form, name='account_create_form'),
     path('account/edit/<int:id>/', account_edit_form, name='account_edit_form'),
+
+    path('security/search/', security_search_form, name='security_search_form'),
 ]
 
 #Apis
@@ -53,6 +56,6 @@ urlpatterns += [
     path('api/account/create/', account_create_api, name='account_create_api'),
     path('api/account/<int:id>/', account_update_api, name='account_update_api'),  # PUT, PATCH, DELETE    
     
-    path('api/securities_search/', securities_search, name='securities_search'),
-    path('api/securities_add/', securities_add, name='securities_add'),
+    path('api/security/search/', security_search_api, name='security_search_api'),
+    path('api/securities/add/', securities_add_api, name='securities_add_api'),
 ]

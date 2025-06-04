@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance
+from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security
 # Register your models here.
 
 @admin.register(Country)
@@ -38,4 +38,15 @@ class AccountBalanceAdmin(admin.ModelAdmin):
     list_display = ('account', 'date', 'balance')
     list_filter = ('account', 'date')
     search_fields = ('account__name',)
+    ordering = ('-date',)
+
+@admin.register(Setting)
+class SettingAdmin(admin.ModelAdmin):
+    list_display = ('user', 'key_finhub', 'key_alpha_vantage', 'key_eodhd', 'key_yahoo', 'key_google_map')
+
+@admin.register(Security)
+class SecurityAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'exchange', 'country', 'user', 'is_active', 'date')
+    search_fields = ('code', 'name', 'exchange')
+    list_filter = ('exchange', 'country', 'is_active', 'api_source')
     ordering = ('-date',)
