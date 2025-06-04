@@ -32,7 +32,6 @@ def transaction_create_api(request):
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
-@csrf_exempt  # Hoặc dùng @csrf_protect nếu gọi từ JS có CSRF token
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 @login_required(login_url='login')
 def transaction_update_api(request, id):
@@ -157,7 +156,7 @@ def security_search_api(request):
 
 @require_POST
 @login_required(login_url='login') 
-def securities_add_api(request):
+def security_add_api(request):
     data = request.POST
     code = data.get('code')
     exchange = data.get('exchange')
@@ -184,3 +183,14 @@ def securities_add_api(request):
         }
     )
     return JsonResponse({'status': 'ok' if created else 'exists'})
+
+@require_http_methods(["DELETE"])
+@login_required(login_url='login')
+def security_update_api(request, id):
+    securitiy = get_object_or_404(Security, id=id)
+    if request.method == "DELETE":
+        securitiy.delete()
+        return JsonResponse({'success': True})
+
+    else:
+        return HttpResponseNotAllowed(['DELETE'])

@@ -7,7 +7,7 @@
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h2 class="mb-0">Accounts</h2>
-    <button type="button" class="btn btn-link" id="add-account-btn">
+    <button type="button" class="btn btn-link" id="btn-add-account">
       + Add New
     </button>
   </div>
@@ -36,14 +36,14 @@
           <td>{{ account.last_tax }}</td>
           <td>{{ account.currency }}</td>
           <td>
-            <button class="btn btn-sm btn-link edit_account-btn" data-id="{{ account.id }}">Edit</button>
-            <button class="btn btn-sm btn-link text-danger delete-account-btn"
+            <button class="btn btn-sm btn-link btn-edit_account" data-id="{{ account.id }}">Edit</button>
+            <button class="btn btn-sm btn-link text-danger btn-delete_account"
               data-id="{{ account.id }}">Delete</button>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center">No accounts found.</td>
+          <td colspan="8" class="text-center">No accounts found.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -110,9 +110,9 @@
           <td>{{ transaction.tax}}</td>
           <td>{{ transaction.account }}</td>
           <td>
-            <button class="btn btn-sm btn-link edit-transaction-btn" data-id="{{ transaction.id }} "
+            <button class="btn btn-sm btn-link btn-edit-transaction" data-id="{{ transaction.id }} "
               data-csrf-token="{{ csrf_token }}">Edit</button>
-            <button class="btn btn-sm btn-link text-danger delete-transaction-btn" data-id="{{ transaction.id }}"
+            <button class="btn btn-sm btn-link text-danger btn-delete-transaction" data-id="{{ transaction.id }}"
               data-csrf-token="{{ csrf_token }}">Delete</button>
           </td>
         </tr>
@@ -162,7 +162,7 @@
     return match ? match[1] : '';
   }
 
-  $('.delete-transaction-btn').click(function () {
+  $('.btn-delete-transaction').click(function () {
     const txId = $(this).data('id');
 
     if (confirm('Are you sure you want to delete this transaction?')) {
@@ -193,7 +193,7 @@
     });
   });
 
-  $('.edit-transaction-btn').on('click', function () {
+  $('.btn-edit-transaction').on('click', function () {
     const txId = $(this).data('id');
 
     fetch(`/transaction/edit/${txId}`)
@@ -258,7 +258,7 @@
 
 
 
-  $('.delete-account-btn').click(function () {
+  $('.btn-delete_account').click(function () {
     const accId = $(this).data('id');
 
     if (confirm('Are you sure you want to delete this account?')) {
@@ -282,7 +282,7 @@
 
 
   
-  $('#add-account-btn').on('click', function () {
+  $('#btn-add-account').on('click', function () {
     $.get('/account/create', function (data) {
       $('#modal-container').html(data);
       var modalEl = document.getElementById('addAccountModal');
@@ -291,7 +291,7 @@
     });
   });
 
-    $('.edit_account-btn').on('click', function () {
+    $('.btn-edit_account').on('click', function () {
     const accId = $(this).data('id');
 
     fetch(`/account/edit/${accId}`)

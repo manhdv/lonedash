@@ -20,7 +20,8 @@ from .apis import (
     account_create_api,
     account_update_api,
     security_search_api,
-    securities_add_api
+    security_add_api,
+    security_update_api
 )
 
 #Views
@@ -57,5 +58,6 @@ urlpatterns += [
     path('api/account/<int:id>/', account_update_api, name='account_update_api'),  # PUT, PATCH, DELETE    
     
     path('api/security/search/', security_search_api, name='security_search_api'),
-    path('api/securities/add/', securities_add_api, name='securities_add_api'),
+    path('api/security/add/', security_add_api, name='security_add_api'),
+    path('api/security/<int:id>/', security_update_api, name='security_update_api'),  # PUT, PATCH, DELETE
 ]
