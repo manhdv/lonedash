@@ -29,11 +29,9 @@ def get_icons_svg():
         return f.read()
 
 
-@login_required(login_url='login')
 def dash_view(request):
     return render(request, 'dash.html', {'icons_svg': get_icons_svg()})
 
-@login_required(login_url='login') 
 def accounts_view(request):
     accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances').order_by('id')
     for account in accounts_list:
@@ -82,7 +80,6 @@ def logout_view(request):
 
 
 
-@login_required(login_url='login')
 def transaction_edit_form(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
     form = TransactionForm(instance=transaction, user=request.user)
@@ -90,7 +87,6 @@ def transaction_edit_form(request, id):
         'transaction_form': form
     })
 
-@login_required(login_url='login')
 def transaction_create_form(request):
     form = TransactionForm(user=request.user)
     return render(request, 'modals/transaction_modal.html', {
@@ -98,7 +94,6 @@ def transaction_create_form(request):
     })
 
 
-@login_required(login_url='login')
 def account_edit_form(request, id):
     account = get_object_or_404(Account, id=id)
     form = AccountForm(instance=account)
@@ -106,7 +101,6 @@ def account_edit_form(request, id):
         'account_form': form
     })
 
-@login_required(login_url='login')
 def account_create_form(request):
     form = AccountForm()
     return render(request, 'modals/account_modal.html', {
@@ -115,7 +109,6 @@ def account_create_form(request):
 
 
 
-@login_required(login_url='login')
 @require_POST
 def account_delete(request):
     acc_id = request.POST.get("account_id")
@@ -123,7 +116,6 @@ def account_delete(request):
     account.delete()
     return redirect('accounts')
 
-@login_required(login_url='login')
 def account_new(request):
     if request.method == "POST":
         form = AccountForm(request.POST)
@@ -139,7 +131,6 @@ def account_new(request):
         form = AccountForm()
     return render(request, 'modals/account_modal.html', {'account_form': form})
 
-@login_required(login_url='login')
 def account_edit(request, acc_id):
     account = get_object_or_404(Account, id=acc_id, user=request.user)
     if request.method == "POST":
@@ -154,7 +145,6 @@ def account_edit(request, acc_id):
     return render(request, 'modals/account_modal.html', {'account_form': form})
 
 
-@login_required(login_url='login') 
 def securities_view(request):
     securities_list = Security.objects.filter(user=request.user).order_by('-id')
     securities_paginator = Paginator(securities_list, 10)
@@ -164,7 +154,6 @@ def securities_view(request):
     return render(request, "securities.html", {'icons_svg': svg_content, 'securities' : securities_page,})
 
 
-@login_required(login_url='login') 
 def settings_view(request):
     obj, _ = Setting.objects.get_or_create(user=request.user)
     if request.method == "POST":
@@ -175,6 +164,5 @@ def settings_view(request):
     svg_content = get_icons_svg()
     return render(request, "settings.html", {'icons_svg': svg_content, 'key_yahoo': obj.key_yahoo, 'key_eodhd': obj.key_eodhd,})
 
-@login_required(login_url='login')
 def security_search_form(request):
     return render(request, 'modals/search_modal.html')

@@ -14,7 +14,6 @@ from .forms import AccountForm, TransactionForm
 from .utils import recalc_account_balance_from_date
 
 @require_POST
-@login_required(login_url='login')
 def transaction_create_api(request):
     try:
         data = json.loads(request.body)
@@ -33,7 +32,6 @@ def transaction_create_api(request):
 
 
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-@login_required(login_url='login')
 def transaction_update_api(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
 
@@ -62,7 +60,6 @@ def transaction_update_api(request, id):
 
 
 @require_POST
-@login_required(login_url='login')
 def account_create_api(request):
     try:
         data = json.loads(request.body)
@@ -81,7 +78,6 @@ def account_create_api(request):
 
 
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-@login_required(login_url='login')
 def account_update_api(request, id):
     account = get_object_or_404(Account, id=id)
 
@@ -111,7 +107,6 @@ from .models import Setting
 import requests
 
 
-@login_required(login_url='login')
 def security_search_api(request):
     q = request.GET.get('q', '')
     if not q:
@@ -155,7 +150,6 @@ def security_search_api(request):
     return JsonResponse({'yahoo': yahoo_results, 'eodhd': eodhd_results})
 
 @require_POST
-@login_required(login_url='login') 
 def security_add_api(request):
     data = request.POST
     code = data.get('code')
@@ -185,7 +179,6 @@ def security_add_api(request):
     return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @require_http_methods(["DELETE"])
-@login_required(login_url='login')
 def security_update_api(request, id):
     securitiy = get_object_or_404(Security, id=id)
     if request.method == "DELETE":
