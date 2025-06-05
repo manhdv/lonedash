@@ -4,14 +4,16 @@ from .views import (
     accounts_view,
     securities_view,
     settings_view,
+    trades_view,
     login_view,
     logout_view,
-    account_delete,
     account_edit_form,
     account_create_form,
     transaction_create_form,
     transaction_edit_form,
-    security_search_form
+    security_search_form,
+    trade_create_form
+    
 )
 
 from .apis import (
@@ -21,7 +23,8 @@ from .apis import (
     account_update_api,
     security_search_api,
     security_add_api,
-    security_update_api
+    security_update_api,
+    trade_add_api
 )
 
 #Views
@@ -35,6 +38,7 @@ urlpatterns = [
     path('accounts/', accounts_view, name='accounts'),
     path('securities/', securities_view, name='securities'),
     path('settings/', settings_view, name='settings'),
+    path('trades/', trades_view, name='trades'),
 
 
 ]
@@ -48,6 +52,7 @@ urlpatterns += [
     path('account/edit/<int:id>/', account_edit_form, name='account_edit_form'),
 
     path('security/search/', security_search_form, name='security_search_form'),
+    path('trade/create/', trade_create_form, name='trade_create_form'),
 ]
 
 #Apis
@@ -60,4 +65,6 @@ urlpatterns += [
     path('api/security/search/', security_search_api, name='security_search_api'),
     path('api/security/add/', security_add_api, name='security_add_api'),
     path('api/security/<int:id>/', security_update_api, name='security_update_api'),  # PUT, PATCH, DELETE
+
+    path('api/trade/add/', trade_add_api, name='trade_add_api'),
 ]

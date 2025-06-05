@@ -1,6 +1,6 @@
 # forms.py
 from django import forms
-from .models import Account, Transaction
+from .models import Account, Transaction, Trade
 from datetime import date, timedelta
 
 class AccountForm(forms.ModelForm):
@@ -44,3 +44,29 @@ class TransactionForm(forms.ModelForm):
         if d and d < date.today() - timedelta(days=90):
             raise forms.ValidationError("Not allow to add/edit old transaction.")
         return d
+
+class TradeForm(forms.ModelForm):
+    gross_amount = forms.DecimalField(required=False, disabled=True, label='Gross Amount')
+    net_amount = forms.DecimalField(required=False, disabled=True, label='Net Amount')
+
+    class Meta:
+        model = Trade
+        fields = ['security', 'account', 'type', 'quantity', 'price', 'fee', 'tax','date', 'note']
+        widgets = {
+            'security': forms.Select(attrs={'class': 'form-select'}),
+            'account': forms.Select(attrs={'class': 'form-select'}),
+            'type': forms.Select(attrs={'class': 'form-select'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'step': '1', 'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'fee': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'tax': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'note': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        #custom fields id
+        for name, field in self.fields.items():
+            field.widget.attrs['id'] = f'id_trade_{name}'
+

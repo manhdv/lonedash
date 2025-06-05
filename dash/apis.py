@@ -5,11 +5,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, AccountBalance, Setting, Security, Country
-from .forms import AccountForm, TransactionForm
+from .models import Account, Transaction, AccountBalance, Setting, Security, Country, Trade
+from .forms import AccountForm, TransactionForm, TradeForm
 
 from .utils import recalc_account_balance_from_date
 
@@ -100,13 +99,6 @@ def account_update_api(request, id):
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
-
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from .models import Setting
-import requests
-
-
 def security_search_api(request):
     q = request.GET.get('q', '')
     if not q:
@@ -149,9 +141,13 @@ def security_search_api(request):
     print(f"EODHD results: {len(eodhd_results)}")
     return JsonResponse({'yahoo': yahoo_results, 'eodhd': eodhd_results})
 
-@require_POST
+
 def security_add_api(request):
-    data = request.POST
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+
     code = data.get('code')
     exchange = data.get('exchange')
     name = data.get('name')
@@ -187,3 +183,22 @@ def security_update_api(request, id):
 
     else:
         return HttpResponseNotAllowed(['DELETE'])
+
+
+@require_http_methods(["POST", "PUT"])
+def trade_add_api(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'errors': 'Invalid JSON'}, status=400)
+
+    form = TradeForm(data)
+    if form.is_valid():
+        trade = form.save(commit=False)
+        trade.user = request.user
+        trade.save()
+        return JsonResponse({'status': 'ok'})
+    else:
+        print('Form errors:', form.errors.as_json())
+
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)

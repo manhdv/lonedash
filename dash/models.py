@@ -129,15 +129,13 @@ class Trade(models.Model):
         ('sell', 'Sell'),
     ])
 
-    quantity = models.DecimalField(max_digits=16, decimal_places=2)
-    price = models.DecimalField(max_digits=16, decimal_places=2)
-    amount = models.DecimalField(max_digits=16, decimal_places=2)
+    quantity = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    price = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
-    currency = models.CharField(max_length=10, default='USD')
     date = models.DateField(default=date.today)
-    description = models.TextField(blank=True)
+    note = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-date']
@@ -163,7 +161,6 @@ class Security(models.Model):
     isin = models.CharField(max_length=20, blank=True)
     close = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     date = models.DateField(default=date.today)
-    is_active = models.BooleanField(default=True)
 
     # metadata
     api_source = models.CharField(max_length=50, blank=True, null=True)

@@ -46,7 +46,7 @@ class SettingAdmin(admin.ModelAdmin):
 
 @admin.register(Security)
 class SecurityAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'exchange', 'country', 'user', 'is_active', 'date')
+    list_display = ('code', 'name', 'exchange', 'country', 'user', 'date')
     search_fields = ('code', 'name', 'exchange')
-    list_filter = ('exchange', 'country', 'is_active', 'api_source')
+    list_filter = ('exchange', 'country', 'api_source')
     ordering = ('-date',)

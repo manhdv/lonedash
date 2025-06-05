@@ -1,24 +1,14 @@
-from datetime import date, timedelta
-from decimal import Decimal
-from collections import defaultdict
+from datetime import date
 import os
-import requests
-import json
-
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Max, Sum, Case, When, F, DecimalField
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST,require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
-from .models import EconomicData, Country
-from .models import Account, Transaction, AccountBalance, Setting, Security
-from .forms import AccountForm, TransactionForm
+from .models import Account, Transaction, Setting, Security, Trade
+from .forms import AccountForm, TransactionForm, TradeForm
 
 
 # Create your views here.
@@ -108,29 +98,6 @@ def account_create_form(request):
     })
 
 
-
-@require_POST
-def account_delete(request):
-    acc_id = request.POST.get("account_id")
-    account = get_object_or_404(Account, id=acc_id, user=request.user)
-    account.delete()
-    return redirect('accounts')
-
-def account_new(request):
-    if request.method == "POST":
-        form = AccountForm(request.POST)
-        if form.is_valid():
-            account = form.save(commit=False)
-            account.user = request.user
-            account.save()
-            return JsonResponse({'success': True, 'id': account.id})
-        else:
-            # re-render the modal with errors
-            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
-    else:
-        form = AccountForm()
-    return render(request, 'modals/account_modal.html', {'account_form': form})
-
 def account_edit(request, acc_id):
     account = get_object_or_404(Account, id=acc_id, user=request.user)
     if request.method == "POST":
@@ -153,6 +120,20 @@ def securities_view(request):
     svg_content = get_icons_svg()
     return render(request, "securities.html", {'icons_svg': svg_content, 'securities' : securities_page,})
 
+
+def trades_view(request):
+    trades_list = Trade.objects.filter(user=request.user).order_by('-id')
+    trades_paginator = Paginator(trades_list, 10)
+    trades_page = trades_paginator.get_page(request.GET.get('page'))
+
+    svg_content = get_icons_svg()
+    return render(request, "trades.html", {'icons_svg': svg_content, 'trades' : trades_page,})
+
+def trade_create_form(request):
+    form = TradeForm()
+    return render(request, 'modals/trade_modal.html', {
+        'trade_form': form,
+    })
 
 def settings_view(request):
     obj, _ = Setting.objects.get_or_create(user=request.user)
