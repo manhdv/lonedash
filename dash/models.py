@@ -234,12 +234,12 @@ class Security(models.Model):
 
 class SecurityPrice(models.Model):
     security = models.ForeignKey('Security', on_delete=models.CASCADE, default=1)
-    date = models.DateField(default=date.today)
-    open = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    high = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    low = models.DecimalField(max_digits=16, decimal_places=2,default=0)
-    close = models.DecimalField(max_digits=16, decimal_places=2)
-    adjusted_close = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+    date = models.DateField(null=True, blank=True)
+    open = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    high = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    low = models.DecimalField(max_digits=16, decimal_places=2,null=True, blank=True)
+    close = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    adjusted_close = models.DecimalField(max_digits=16, decimal_places=2,null=True, blank=True)
     volume = models.BigIntegerField(default=0)
 
     class Meta:

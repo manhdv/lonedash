@@ -7,10 +7,11 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance
+from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice
 from .forms import AccountForm, TransactionForm, EntryForm
 
 from django.db.models import Prefetch
+from django.db.models import OuterRef, Subquery
 
 
 # Create your views here.
@@ -112,12 +113,24 @@ def account_edit(request, acc_id):
 
 
 def securities_view(request):
-    securities_list = Security.objects.filter(user=request.user).order_by('-id')
+    # Subquery lấy giá close và date mới nhất cho mỗi security
+    latest_prices = SecurityPrice.objects.filter(
+        security=OuterRef('pk')
+    ).order_by('-date')
+
+    securities_list = Security.objects.filter(user=request.user).annotate(
+        last_close=Subquery(latest_prices.values('close')[:1]),
+        last_close_date=Subquery(latest_prices.values('date')[:1])
+    ).order_by('-id')
+
     securities_paginator = Paginator(securities_list, 10)
     securities_page = securities_paginator.get_page(request.GET.get('page'))
 
     svg_content = get_icons_svg()
-    return render(request, "securities.html", {'icons_svg': svg_content, 'securities' : securities_page,})
+    return render(request, "securities.html", {
+        'icons_svg': svg_content,
+        'securities': securities_page,
+    })
 
 
 def trades_view(request):

@@ -21,8 +21,8 @@
                     <th scope="col">Exchange</th>
                     <th scope="col">Name</th>
                     <th scope="col">Type</th>
-                    <th scope="col">Currency</th>
-                    <th scope="col">Country</th>
+                    <th scope="col">Close</th>
+                    <th scope="col">Date</th>
                     <th scope="col">API</th>
                     <th scope="col">Action</th>
                 </tr>
@@ -35,8 +35,8 @@
                     <td>{{ security.exchange }}</td>
                     <td>{{ security.name}}</td>
                     <td>{{ security.type}}</td>
-                    <td>{{ security.currency}}</td>
-                    <td>{{ security.country }}</td>
+                    <td>{{ security.last_close|floatformat:2 }}</td>
+                    <td>{{ security.last_close_date  }}</td>
                     <td>{{ security.api_source}}</td>
                     <td>
                         <button class="btn btn-sm btn-link text-danger btn-delete-security"
