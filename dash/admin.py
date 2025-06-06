@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice
+from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice, TradeExit, TradeEntry
 # Register your models here.
 
 @admin.register(Country)
@@ -56,3 +56,19 @@ class SecurityPriceAdmin(admin.ModelAdmin):
     list_display = ('security', 'date', 'close', 'volume')
     list_filter = ('security', 'date')
     search_fields = ('security__code',)
+
+class TradeExitInline(admin.TabularInline):
+    model = TradeExit
+    extra = 0
+
+@admin.register(TradeEntry)
+class TradeEntryAdmin(admin.ModelAdmin):
+    list_display = ('date', 'account', 'security', 'quantity', 'price', 'fee', 'tax', 'is_closed')
+    list_filter = ('account', 'security', 'date')
+    search_fields = ('security__code', 'account__name')
+    inlines = [TradeExitInline]
+
+@admin.register(TradeExit)
+class TradeExitAdmin(admin.ModelAdmin):
+    list_display = ('date', 'entry', 'price', 'quantity', 'fee', 'tax', 'profit')
+    list_filter = ('date',)

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import date
@@ -73,13 +74,19 @@ class Account(models.Model):
 class AccountBalance(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='balances')
     date = models.DateField(default=date.today)
+    principal = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    float = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
     class Meta:
         unique_together = ('account', 'date')  # 1 balance / day
-
+    
+    @property
+    def equity(self):
+        return self.balance + self.float
+    
     def __str__(self):
         return f"{self.account.name} - {self.date}: {self.balance}"
 
@@ -90,8 +97,6 @@ class Transaction(models.Model):
     type = models.CharField(max_length=20, choices=[
         ('deposit', 'Deposit'),
         ('withdrawal', 'Withdrawal'),
-        ('transfer_in', 'Transfer In'),
-        ('transfer_out', 'Transfer Out'),
         ('dividien', 'Dividien'),
         ('interest', 'Interest'),
         ('fee', 'Fee')
@@ -147,13 +152,15 @@ class TradeEntry(models.Model):
     @property
     def net_amount(self):
         return self.gross_amount - self.fee - self.tax
-    @property
-    def filled_quantity(self):
-        return sum(exit.quantity for exit in self.exits.all())
+    
+    def filled_quantity(self, until_date=None):
+        qs = self.exits.all()
+        if until_date:
+            qs = qs.filter(date__lte=until_date)
+        return qs.aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
 
-    @property
-    def remaining_quantity(self):
-        return self.quantity - self.filled_quantity
+    def remaining_quantity(self, until_date=None):
+        return self.quantity - self.filled_quantity(until_date)
 
     @property
     def is_closed(self):

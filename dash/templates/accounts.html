@@ -18,8 +18,9 @@
         <tr>
           <th scope="col">#</th>
           <th scope="col">Name</th>
-          <th scope="col">Type</th>
           <th scope="col">Balance</th>
+          <th scope="col">Principal</th>
+          <th scope="col">Equity</th>
           <th scope="col">Fee</th>
           <th scope="col">Tax</th>
           <th scope="col">Currency</th>
@@ -31,10 +32,11 @@
         <tr>
           <td>{{ forloop.counter }}</td>
           <td>{{ account.name }}</td>
-          <td>{{ account.get_type_display }}</td>
-          <td>{{ account.last_balance }}</td>
-          <td>{{ account.last_fee }}</td>
-          <td>{{ account.last_tax }}</td>
+          <td>{{ account.balance }}</td>
+          <td>{{ account.principal }}</td>
+          <td>{{ account.equity }}</td>
+          <td>{{ account.fee }}</td>
+          <td>{{ account.tax }}</td>
           <td>{{ account.currency }}</td>
           <td>
             <button class="btn btn-sm btn-link btn-edit_account" data-id="{{ account.id }}">Edit</button>
@@ -44,7 +46,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8" class="text-center">No accounts found.</td>
+          <td colspan="9" class="text-center">No accounts found.</td>
         </tr>
         {% endfor %}
       </tbody>

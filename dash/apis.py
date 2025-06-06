@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit
 from .forms import AccountForm, TransactionForm, EntryForm
 
-from .utils import recalc_account_balance_from_date
+from .tasks import update_security_prices_for_user
 
 @require_POST
 def transaction_create_api(request):
@@ -23,7 +23,6 @@ def transaction_create_api(request):
         transaction = form.save(commit=False)
         transaction.user = request.user
         transaction.save()
-        recalc_account_balance_from_date(transaction.account, transaction.date)
         return JsonResponse({'success': True, 'id': transaction.id})
     else:
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
@@ -42,7 +41,6 @@ def transaction_update_api(request, id):
         form = TransactionForm(data, instance=transaction, user=request.user)
         if form.is_valid():
             updated_transaction = form.save()
-            recalc_account_balance_from_date(updated_transaction.account, updated_transaction.date)
             return JsonResponse({'success': True, 'id': transaction.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
@@ -50,7 +48,6 @@ def transaction_update_api(request, id):
         recalc_date = transaction.date
         account = transaction.account
         transaction.delete()
-        recalc_account_balance_from_date(account, recalc_date)
         return JsonResponse({'success': True})
 
     else:
@@ -171,6 +168,7 @@ def security_add_api(request):
             'api_source': api_source,
         }
     )
+    update_security_prices_for_user(request.user)
     return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @require_http_methods(["DELETE"])
@@ -196,7 +194,6 @@ def entry_add_api(request):
         entry = form.save(commit=False)
         entry.user = request.user
         entry.save()
-        recalc_account_balance_from_date(entry.account, entry.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -216,7 +213,6 @@ def entry_update_api(request, id):
         form = EntryForm(data, instance=entry, user=request.user)
         if form.is_valid():
             updated_entry = form.save()
-            recalc_account_balance_from_date(updated_entry.account, updated_entry.date)
             return JsonResponse({'success': True, 'id': entry.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
@@ -224,7 +220,6 @@ def entry_update_api(request, id):
         account = entry.account
         date = entry.date
         entry.delete()
-        recalc_account_balance_from_date(account, date)
         return JsonResponse({'success': True})
 
     else:

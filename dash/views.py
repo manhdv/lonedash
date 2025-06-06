@@ -7,8 +7,10 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit
+from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance
 from .forms import AccountForm, TransactionForm, EntryForm
+
+from django.db.models import Prefetch
 
 
 # Create your views here.
@@ -23,17 +25,18 @@ def dash_view(request):
     return render(request, 'dash.html', {'icons_svg': get_icons_svg()})
 
 def accounts_view(request):
-    accounts_list = Account.objects.filter(user=request.user).prefetch_related('balances').order_by('id')
+    balances_qs = AccountBalance.objects.filter(date__lte=date.today()).order_by('-date')
+    accounts_list = Account.objects.filter(user=request.user).prefetch_related(
+        Prefetch('balances', queryset=balances_qs, to_attr='prefetched_balances')
+    ).order_by('id')
+
     for account in accounts_list:
-        latest = (
-            account.balances
-            .filter(date__lte=date.today())
-            .order_by('-date')
-            .first()
-        )
-        account.last_balance = latest.balance if latest else 0
-        account.last_fee = latest.fee if latest else 0
-        account.last_tax = latest.tax if latest else 0
+        latest = next((b for b in account.prefetched_balances), None)
+        account.balance = latest.balance if latest else 0
+        account.principal = latest.principal if latest else 0
+        account.equity = latest.equity if latest else 0
+        account.fee = latest.fee if latest else 0
+        account.tax = latest.tax if latest else 0
 
     paginator = Paginator(accounts_list, 10)  # 10 per page
     page_number = request.GET.get('page')
