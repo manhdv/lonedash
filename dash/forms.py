@@ -1,6 +1,6 @@
 # forms.py
 from django import forms
-from .models import Account, Transaction, Trade
+from .models import Account, Transaction, TradeEntry, TradeExit
 from datetime import date, timedelta
 
 class AccountForm(forms.ModelForm):
@@ -45,17 +45,16 @@ class TransactionForm(forms.ModelForm):
             raise forms.ValidationError("Not allow to add/edit old transaction.")
         return d
 
-class TradeForm(forms.ModelForm):
+class EntryForm(forms.ModelForm):
     gross_amount = forms.DecimalField(required=False, disabled=True, label='Gross Amount')
     net_amount = forms.DecimalField(required=False, disabled=True, label='Net Amount')
 
     class Meta:
-        model = Trade
-        fields = ['security', 'account', 'type', 'quantity', 'price', 'fee', 'tax','date', 'note']
+        model = TradeEntry
+        fields = ['security', 'account', 'quantity', 'price', 'fee', 'tax','date', 'note']
         widgets = {
             'security': forms.Select(attrs={'class': 'form-select'}),
             'account': forms.Select(attrs={'class': 'form-select'}),
-            'type': forms.Select(attrs={'class': 'form-select'}),
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'step': '1', 'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),

@@ -156,7 +156,7 @@ document.getElementById('btn-add-account').addEventListener('click', () => {
 
 
 document.querySelectorAll('.btn-edit_account').forEach(button => {
-    button.addEventListener('click', function () {
+    button.addEventListener('click', function (e) {
         const accId = e.target.dataset.id;
         fetch(`/account/edit/${accId}`)
             .then(res => {

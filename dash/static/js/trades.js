@@ -5,7 +5,7 @@ function getCSRFToken() {
 
 document.addEventListener('click', function (e) {
     if (e.target) {
-        if (e.target.id === 'btn-add-trade') {
+        if (e.target.id === 'btn-add-entry') {
             fetch(`/trade/create/`)
                 .then(response => response.text())
                 .then(data => {
@@ -19,6 +19,30 @@ document.addEventListener('click', function (e) {
                 });
         }
     }
+});
+
+
+document.querySelectorAll('.btn-delete-entry').forEach(button => {
+    button.addEventListener('click', function () {
+        const id = this.dataset.id;
+
+        if (confirm('Are you sure you want to delete this entry?')) {
+            fetch(`/api/entry/${id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+                .then(res => {
+                    if (res.ok) {
+                        location.reload(); // hoặc bạn có thể remove row DOM nếu thích
+                    } else {
+                        alert('Failed to delete entry.');
+                    }
+                })
+                .catch(() => alert('Request failed.'));
+        }
+    });
 });
 
 document.addEventListener('submit', function (e) {
@@ -75,31 +99,31 @@ document.addEventListener('submit', function (e) {
 });
 
 document.addEventListener('input', function (e) {
-  if (
-    e.target &&
-    ['id_trade_quantity', 'id_trade_price', 'id_trade_fee', 'id_trade_tax'].includes(e.target.id)
-  ) {
-    const modal = document.getElementById('addTradeModal');
-    if (!modal) return;
+    if (
+        e.target &&
+        ['id_trade_quantity', 'id_trade_price', 'id_trade_fee', 'id_trade_tax'].includes(e.target.id)
+    ) {
+        const modal = document.getElementById('addTradeModal');
+        if (!modal) return;
 
-    const quantityInput = modal.querySelector('#id_trade_quantity');
-    const priceInput = modal.querySelector('#id_trade_price');
-    const feeInput = modal.querySelector('#id_trade_fee');
-    const taxInput = modal.querySelector('#id_trade_tax');
-    const grossAmountInput = modal.querySelector('#id_trade_gross_amount');
-    const netAmountInput = modal.querySelector('#id_trade_net_amount');
+        const quantityInput = modal.querySelector('#id_trade_quantity');
+        const priceInput = modal.querySelector('#id_trade_price');
+        const feeInput = modal.querySelector('#id_trade_fee');
+        const taxInput = modal.querySelector('#id_trade_tax');
+        const grossAmountInput = modal.querySelector('#id_trade_gross_amount');
+        const netAmountInput = modal.querySelector('#id_trade_net_amount');
 
-    if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
+        if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
 
-    const quantity = parseFloat(quantityInput.value) || 0;
-    const price = parseFloat(priceInput.value) || 0;
-    const fee = parseFloat(feeInput.value) || 0;
-    const tax = parseFloat(taxInput.value) || 0;
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const fee = parseFloat(feeInput.value) || 0;
+        const tax = parseFloat(taxInput.value) || 0;
 
-    const gross = quantity * price;
-    const net = gross - fee - tax;
+        const gross = quantity * price;
+        const net = gross - fee - tax;
 
-    grossAmountInput.value = gross.toFixed(2);
-    netAmountInput.value = net.toFixed(2);
-  }
+        grossAmountInput.value = gross.toFixed(2);
+        netAmountInput.value = net.toFixed(2);
+    }
 });

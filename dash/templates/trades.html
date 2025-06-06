@@ -6,8 +6,11 @@
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h2 class="mb-0">Securities</h2>
-        <button type="button" class="btn btn-link" id="btn-add-trade">+ Add New</button>
+        <h2 class="mb-0">Trades</h2>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="mb-0">Entries</h4>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-entry">+ Add Entry</button>
     </div>
     <div class="table-responsive small">
         <table class="table table-striped table-sm">
@@ -16,33 +19,35 @@
                     <th scope="col">#</th>
                     <th scope="col">Security</th>
                     <th scope="col">Account</th>
-                    <th scope="col">Type</th>
                     <th scope="col">Quantity</th>
+                    <th scope="col">Remain</th>
                     <th scope="col">Price</th>
                     <th scope="col">Fee</th>
                     <th scope="col">Tax</th>
                     <th scope="col">Date</th>
+                    <th scope="col">Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for trade in trades %}
+                {% for entry in entries %}
                 <tr>
-                    <td>{{ trade.security }}</td>
-                    <td>{{ trade.account }}</td>
-                    <td>{{ trade.type }}</td>
-                    <td>{{ trade.quantity}}</td>
-                    <td>{{ trade.price}}</td>
-                    <td>{{ trade.fee}}</td>
-                    <td>{{ trade.tax }}</td>
-                    <td>{{ trade.date}}</td>
+                    <td>{{ entry.id }}</td>
+                    <td>{{ entry.security }}</td>
+                    <td>{{ entry.account }}</td>
+                    <td>{{ entry.quantity}}</td>
+                    <td>{{ entry.remaining_quantity}}</td>
+                    <td>{{ entry.price}}</td>
+                    <td>{{ entry.fee}}</td>
+                    <td>{{ entry.tax }}</td>
+                    <td>{{ entry.date}}</td>
                     <td>
-                        <button class="btn btn-sm btn-link text-danger btn-delete-trade"
-                            data-id="{{ trade.id }}">Delete</button>
+                        <button class="btn btn-sm btn-link text-danger btn-delete-entry"
+                            data-id="{{ entry.id }}">Delete</button>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="text-center">No trade found.</td>
+                    <td colspan="10" class="text-center">No entry found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -51,23 +56,93 @@
     <!-- Pagination for transactions -->
     <nav>
         <ul class="pagination pagination-sm justify-content-center">
-            {% if trades.has_previous %}
+            {% if entries.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ trades.previous_page_number }}">Previous</a>
+                <a class="page-link" href="?entries_page={{ entries.previous_page_number }}">Previous</a>
             </li>
             {% else %}
             <li class="page-item disabled"><span class="page-link">Previous</span></li>
             {% endif %}
 
-            {% for num in trades.paginator.page_range %}
-            <li class="page-item {% if trades.number == num %}active{% endif %}">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            {% for num in entries.paginator.page_range %}
+            <li class="page-item {% if entries.number == num %}active{% endif %}">
+                <a class="page-link" href="?entries_page={{ num }}">{{ num }}</a>
             </li>
             {% endfor %}
 
-            {% if trades.has_next %}
+            {% if entries.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ trades.next_page_number }}">Next</a>
+                <a class="page-link" href="?entries_page={{ entries.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="mb-0">Exits</h4>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-exit">+ Add Exit</button>
+    </div>
+    <div class="table-responsive small">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Security</th>
+                    <th scope="col">Account</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Fee</th>
+                    <th scope="col">Tax</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exit in exits %}
+                <tr>
+                    <td>{{ exit.id }}</td>
+                    <td>{{ exit.security }}</td>
+                    <td>{{ exit.account }}</td>
+                    <td>{{ exit.quantity}}</td>
+                    <td>{{ exit.price}}</td>
+                    <td>{{ exit.fee}}</td>
+                    <td>{{ exit.tax }}</td>
+                    <td>{{ exit.date}}</td>
+                    <td>
+                        <button class="btn btn-sm btn-link text-danger btn-delete-exit"
+                            data-id="{{ exit.id }}">Delete</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No exit found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Pagination for transactions -->
+    <nav>
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if exits.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?exits_page={{ exits.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in exits.paginator.page_range %}
+            <li class="page-item {% if exits.number == num %}active{% endif %}">
+                <a class="page-link" href="?exits_page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if exits.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?exits_page={{ exits.next_page_number }}">Next</a>
             </li>
             {% else %}
             <li class="page-item disabled"><span class="page-link">Next</span></li>

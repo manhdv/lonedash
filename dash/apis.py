@@ -1,14 +1,13 @@
 import requests
 import json
 
-from django.http import JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 
 from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, AccountBalance, Setting, Security, Country, Trade
-from .forms import AccountForm, TransactionForm, TradeForm
+from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit
+from .forms import AccountForm, TransactionForm, EntryForm
 
 from .utils import recalc_account_balance_from_date
 
@@ -42,8 +41,8 @@ def transaction_update_api(request, id):
 
         form = TransactionForm(data, instance=transaction, user=request.user)
         if form.is_valid():
-            form.save()
-            recalc_account_balance_from_date(transaction.account, transaction.date)
+            updated_transaction = form.save()
+            recalc_account_balance_from_date(updated_transaction.account, updated_transaction.date)
             return JsonResponse({'success': True, 'id': transaction.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
@@ -186,19 +185,47 @@ def security_update_api(request, id):
 
 
 @require_http_methods(["POST", "PUT"])
-def trade_add_api(request):
+def entry_add_api(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'errors': 'Invalid JSON'}, status=400)
 
-    form = TradeForm(data)
+    form = EntryForm(data)
     if form.is_valid():
-        trade = form.save(commit=False)
-        trade.user = request.user
-        trade.save()
+        entry = form.save(commit=False)
+        entry.user = request.user
+        entry.save()
+        recalc_account_balance_from_date(entry.account, entry.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
 
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+    
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
+def entry_update_api(request, id):
+    entry = get_object_or_404(TradeEntry, id=id, user=request.user)
+
+    if request.method in ["PUT", "PATCH"]:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+
+        form = EntryForm(data, instance=entry, user=request.user)
+        if form.is_valid():
+            updated_entry = form.save()
+            recalc_account_balance_from_date(updated_entry.account, updated_entry.date)
+            return JsonResponse({'success': True, 'id': entry.id})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    elif request.method == "DELETE":
+        account = entry.account
+        date = entry.date
+        entry.delete()
+        recalc_account_balance_from_date(account, date)
+        return JsonResponse({'success': True})
+
+    else:
+        return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])

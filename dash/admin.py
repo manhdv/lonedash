@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security
+from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice
 # Register your models here.
 
 @admin.register(Country)
@@ -50,3 +50,9 @@ class SecurityAdmin(admin.ModelAdmin):
     search_fields = ('code', 'name', 'exchange')
     list_filter = ('exchange', 'country', 'api_source')
     ordering = ('-date',)
+
+@admin.register(SecurityPrice)
+class SecurityPriceAdmin(admin.ModelAdmin):
+    list_display = ('security', 'date', 'close', 'volume')
+    list_filter = ('security', 'date')
+    search_fields = ('security__code',)

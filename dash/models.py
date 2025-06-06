@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import date
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 class Setting(models.Model):
@@ -119,23 +120,22 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.date} - {self.type} - {self.amount}"
 
-class Trade(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trade')
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='trade')
+class TradeEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='entries')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='entries')
+    security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='entries')
 
-    security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='trade')
-    type = models.CharField(max_length=4, choices=[
-        ('buy', 'Buy'),
-        ('sell', 'Sell'),
-    ])
-
-    quantity = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    price = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    quantity = models.DecimalField(max_digits=16, decimal_places=2)
+    price = models.DecimalField(max_digits=16, decimal_places=2)
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
     date = models.DateField(default=date.today)
     note = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.date} - BUY {self.quantity} x {self.security.code} @ {self.price}"
+
 
     class Meta:
         ordering = ['-date']
@@ -147,9 +147,55 @@ class Trade(models.Model):
     @property
     def net_amount(self):
         return self.gross_amount - self.fee - self.tax
+    @property
+    def filled_quantity(self):
+        return sum(exit.quantity for exit in self.exits.all())
+
+    @property
+    def remaining_quantity(self):
+        return self.quantity - self.filled_quantity
+
+    @property
+    def is_closed(self):
+        return self.remaining_quantity == 0
+    
+    def __str__(self):
+        return f"{self.date} - BUY {self.quantity} x {self.security.code} @ {self.price}"
+    
+class TradeExit(models.Model):
+    entry = models.ForeignKey(TradeEntry, on_delete=models.CASCADE, related_name='exits')
+
+    price = models.DecimalField(max_digits=16, decimal_places=2)
+    quantity = models.DecimalField(max_digits=16, decimal_places=2)  # Allow partial
+    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    date = models.DateField(default=date.today)
+
+    class Meta:
+        ordering = ['-date'] 
+
+    def clean(self):
+        # Ensure quantity doesn't exceed remaining entry quantity
+        if self.quantity > self.entry.remaining_quantity:
+            raise ValidationError("Exit quantity cannot exceed remaining entry quantity")
+       
+    @property
+    def profit(self):
+        """
+        Profit for this exit, accounting for partial quantity:
+        (exit_price - entry_price) * quantity - prorated entry costs - exit costs
+        """
+        gross = (self.price - self.entry.price) * self.quantity
+        # Prorate entry fee & tax proportionally to the portion closed
+        fraction = self.quantity / self.entry.quantity
+        entry_fee_share = self.entry.fee * fraction
+        entry_tax_share = self.entry.tax * fraction
+        cost = entry_fee_share + entry_tax_share + self.fee + self.tax
+        return gross - cost
 
     def __str__(self):
-        return f"{self.date} - {self.type.upper()} {self.quantity} x {self.security.code} @ {self.price}"
+        return f"{self.date} - SELL {self.quantity} x {self.entry.security.code} @ {self.price}"
+
 
 class Security(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')

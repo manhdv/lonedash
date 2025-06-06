@@ -7,8 +7,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, Setting, Security, Trade
-from .forms import AccountForm, TransactionForm, TradeForm
+from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit
+from .forms import AccountForm, TransactionForm, EntryForm
 
 
 # Create your views here.
@@ -66,10 +66,6 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-
-
-
-
 def transaction_edit_form(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
     form = TransactionForm(instance=transaction, user=request.user)
@@ -122,15 +118,19 @@ def securities_view(request):
 
 
 def trades_view(request):
-    trades_list = Trade.objects.filter(user=request.user).order_by('-id')
-    trades_paginator = Paginator(trades_list, 10)
-    trades_page = trades_paginator.get_page(request.GET.get('page'))
+    entries_list = TradeEntry.objects.filter(user=request.user).order_by('-id')
+    entries_paginator = Paginator(entries_list, 10)
+    entries_page = entries_paginator.get_page(request.GET.get('entries_page'))
+
+    exits_list = TradeExit.objects.filter(entry__user=request.user).order_by('-id')
+    exits_paginator = Paginator(exits_list, 10)
+    exits_page = exits_paginator.get_page(request.GET.get('exits_page'))
 
     svg_content = get_icons_svg()
-    return render(request, "trades.html", {'icons_svg': svg_content, 'trades' : trades_page,})
+    return render(request, "trades.html", {'icons_svg': svg_content, 'entries' : entries_page, 'exits' : exits_page})
 
 def trade_create_form(request):
-    form = TradeForm()
+    form = EntryForm()
     return render(request, 'modals/trade_modal.html', {
         'trade_form': form,
     })

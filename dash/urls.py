@@ -24,7 +24,8 @@ from .apis import (
     security_search_api,
     security_add_api,
     security_update_api,
-    trade_add_api
+    entry_add_api,
+    entry_update_api
 )
 
 #Views
@@ -66,5 +67,6 @@ urlpatterns += [
     path('api/security/add/', security_add_api, name='security_add_api'),
     path('api/security/<int:id>/', security_update_api, name='security_update_api'),  # PUT, PATCH, DELETE
 
-    path('api/trade/add/', trade_add_api, name='trade_add_api'),
+    path('api/entry/add/', entry_add_api, name='entry_add_api'),
+    path('api/entry/<int:id>/', entry_update_api, name='entry_update_api'),
 ]
