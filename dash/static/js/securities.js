@@ -1,9 +1,4 @@
 
-function getCSRFToken() {
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : '';
-}
-
 document.querySelectorAll('.btn-delete-security').forEach(button => {
     button.addEventListener('click', function () {
         const id = this.dataset.id;
@@ -19,10 +14,10 @@ document.querySelectorAll('.btn-delete-security').forEach(button => {
                     if (res.ok) {
                         location.reload(); // hoặc bạn có thể remove row DOM nếu thích
                     } else {
-                        alert('Failed to delete transaction.');
+                        showError('Failed to delete transaction.');
                     }
                 })
-                .catch(() => alert('Request failed.'));
+                .catch(() => showError('Request failed.'));
         }
     });
 });
@@ -77,7 +72,7 @@ document.addEventListener('click', function (e) {
             alert(res.status === 'ok' ? 'Added!' : 'Already exists.');
         })
         .catch(() => {
-            alert('Error adding security');
+            showError('Error adding security');
         });
     } else if (e.target.id === 'close-search-btn') {
         location.reload();

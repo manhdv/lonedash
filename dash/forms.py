@@ -56,7 +56,7 @@ class EntryForm(forms.ModelForm):
             'security': forms.Select(attrs={'class': 'form-select'}),
             'account': forms.Select(attrs={'class': 'form-select'}),
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'quantity': forms.NumberInput(attrs={'step': '1', 'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'step': '0.0001', 'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
             'fee': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
             'tax': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),

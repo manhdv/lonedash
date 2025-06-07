@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice, TradeExit, TradeEntry
+from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice, TradeExit, TradeEntry, PortfolioPerformance
 # Register your models here.
 
 @admin.register(Country)
@@ -35,7 +35,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(AccountBalance)
 class AccountBalanceAdmin(admin.ModelAdmin):
-    list_display = ('account', 'date', 'balance')
+    list_display = ('account', 'date', 'balance', 'equity', 'float')
     list_filter = ('account', 'date')
     search_fields = ('account__name',)
     ordering = ('-date',)
@@ -72,3 +72,9 @@ class TradeEntryAdmin(admin.ModelAdmin):
 class TradeExitAdmin(admin.ModelAdmin):
     list_display = ('date', 'entry', 'price', 'quantity', 'fee', 'tax', 'profit')
     list_filter = ('date',)
+
+@admin.register(PortfolioPerformance)
+class PortfolioPerformanceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'date', 'balance', 'float', 'principal', 'fee', 'tax', 'profit', 'profit_percent')
+    list_filter = ('user', 'date')
+    search_fields = ('user__username',)

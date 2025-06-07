@@ -1,13 +1,20 @@
-from datetime import timedelta, date as dt_date
+from datetime import date, timedelta
 from decimal import Decimal
 from collections import defaultdict
 
+import requests
+
+from django.utils import timezone
+
+from dash.models import Security, SecurityPrice, Setting
 from .models import (
     AccountBalance,
-    TradeExit,
+    PortfolioPerformance,
     TradeEntry,
-    SecurityPrice,
+    TradeExit,
+    SecurityPrice
 )
+
 
 def update_account(account, start_date=None):
     """
@@ -24,7 +31,7 @@ def update_account(account, start_date=None):
             .order_by("-date")
             .first()
         )
-        start_date = last_bal.date if last_bal else dt_date.today()
+        start_date = last_bal.date if last_bal else date.today()
 
     # ------------------------------------------------------------------ #
     # 2️⃣  CẬP NHẬT balance / fee / tax / principal  (giống hàm cũ)
@@ -40,7 +47,7 @@ def update_account(account, start_date=None):
     principal = prev_bal.principal if prev_bal else Decimal("0")
 
     transactions = (
-        account.transaction.filter(date__gte=start_date).order_by("date")
+        account.transactions.filter(date__gte=start_date).order_by("date")
     )
     entries = account.entries.filter(date__gte=start_date).order_by("date")
     exits = (
@@ -64,6 +71,7 @@ def update_account(account, start_date=None):
 
     for entry in entries:
         net = entry.quantity * entry.price + entry.fee + entry.tax
+        print(net)
         daily_changes[entry.date] -= net
         daily_fee[entry.date] += entry.fee
         daily_tax[entry.date] += entry.tax
@@ -79,7 +87,7 @@ def update_account(account, start_date=None):
     all_dates = (
         set(daily_changes.keys()) | set(daily_principal.keys()) or {start_date}
     )
-    today = dt_date.today()
+    today = date.today()
     current = min(all_dates)
     last = max(today, max(all_dates))
 
@@ -144,3 +152,216 @@ def _calc_float_equity(account, on_date):
         if price:
             equity += qty * price
     return equity
+
+
+
+
+def fetch_security_prices_eodhd(security_code, period_days=90, start_date=None):
+    """
+    Trả về list dict {'date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume'}
+    cho security_code, tối đa 90 ngày gần nhất (free plan), giống fetch_security_prices_yahoo.
+    Nếu có start_date thì sẽ lọc lại sau khi fetch.
+    """
+    api_key = Setting.objects.values_list("key_eodhd", flat=True).first() or ""
+    if not api_key:
+        print("EODHD API key missing (Setting.key_eodhd).")
+        return []
+
+    url = (
+        f"https://eodhd.com/api/eod/{security_code}"
+        f"?period={period_days}d&api_token={api_key}&fmt=json"
+    )
+
+    try:
+        r = requests.get(url, timeout=10, verify=False)
+        r.raise_for_status()
+        raw = r.json()
+    except Exception as exc:
+        print(f"[EODHD] request failed for {security_code}: {exc}")
+        return []
+
+    if not isinstance(raw, list):
+        print(f"[EODHD] bad response for {security_code}: {raw}")
+        return []
+
+    prices = []
+    for row in reversed(raw):  # oldest → newest
+        try:
+            row_date = date.fromisoformat(row["date"])
+            if start_date and row_date < start_date:
+                continue  # bỏ dữ liệu quá cũ
+            prices.append({
+                "date": row_date,
+                "open": Decimal(str(row["open"])),
+                "high": Decimal(str(row["high"])),
+                "low": Decimal(str(row["low"])),
+                "close": Decimal(str(row["close"])),
+                "adjusted_close": Decimal(str(row.get("adjusted_close", row["close"]))),
+                "volume": int(row["volume"]),
+            })
+        except (KeyError, ValueError) as exc:
+            print(f"[EODHD] parse error {security_code} {row}: {exc}")
+
+    return prices
+
+
+def fetch_security_prices_yahoo(security_code, period_days=90, start_date=None):
+    # Xác định range param cho yahoo API
+    # Nếu start_date có, tính từ đó đến hôm nay, else 3 tháng
+    end_date = timezone.now().date()
+    if not start_date:
+        start_date = end_date - timedelta(days=period_days)
+    
+    delta_days = (end_date - start_date).days
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    }
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{security_code}?range={delta_days}d&interval=1d"
+    try:
+        r = requests.get(url, headers=headers, verify=False, timeout = 10)
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        print(f"Yahoo fetch error for {security_code}: {e}")
+        return []
+
+    try:
+        timestamps = data['chart']['result'][0]['timestamp']
+        indicators = data['chart']['result'][0]['indicators']['quote'][0]
+    except (KeyError, IndexError):
+        return []
+
+    prices = []
+    for i, ts in enumerate(timestamps):
+        dt = date.fromtimestamp(ts)
+        prices.append({
+            'date': dt,
+            'open': indicators['open'][i] or 0,
+            'high': indicators['high'][i] or 0,
+            'low': indicators['low'][i] or 0,
+            'close': indicators['close'][i] or 0,
+            'volume': indicators['volume'][i] or 0,
+            'adjusted_close': indicators.get('adjclose', [0]*len(timestamps))[i] or 0
+        })
+    return prices
+
+
+def update_security_prices_for_user(user):
+    securities = Security.objects.filter(user=user)
+    for security in securities:
+        latest_price = SecurityPrice.objects.filter(security=security).order_by('-date').first()
+        if latest_price:
+            start_date = latest_price.date + timedelta(days=1)
+        else:
+            start_date = timezone.now().date() - timedelta(days=90)
+        print("start date = " + str(start_date))
+        if start_date > timezone.now().date():
+            continue
+
+        if security.api_source == 'eodhd':
+            symbol = f"{security.code}.{security.exchange}"
+            prices = fetch_security_prices_eodhd(symbol, start_date=start_date)
+            if not prices:
+                continue
+
+            for p in prices:
+                SecurityPrice.objects.update_or_create(
+                    security=security,
+                    date=p['date'],
+                    defaults={
+                        'open': p['open'],
+                        'high': p['high'],
+                        'low': p['low'],
+                        'close': p['close'],
+                        'adjusted_close': p['adjusted_close'],
+                        'volume': p['volume'],
+                    }
+                )
+            print(f"Updated prices from EODHD for {security.code} from {start_date} to {timezone.now().date()}")
+            continue
+
+
+        elif security.api_source == 'yahoo' or not security.api_source:
+            prices = fetch_security_prices_yahoo(security.code, start_date=start_date)
+            if not prices:
+                continue
+
+            for p in prices:
+                SecurityPrice.objects.update_or_create(
+                    security=security,
+                    date=p['date'],
+                    defaults={
+                        'open': p['open'],
+                        'high': p['high'],
+                        'low': p['low'],
+                        'close': p['close'],
+                        'adjusted_close': p['adjusted_close'],
+                        'volume': p['volume'],
+                    }
+                )
+            print(f"Updated prices for {security.code} from {start_date} to {timezone.now().date()}")
+        else:
+            print(f"Unknown api_source '{security.api_source}' for {security.code}, skipping.")
+
+# ---- helper -------------------------------------------------------------
+
+def fx_to_usd(currency: str, as_of: date) -> Decimal:
+    if currency.upper() == "USD":
+        return Decimal("1")
+
+    symbol = f"{currency.upper()}=X"
+
+    # Check if Security with this symbol exists at all
+    exists = Security.objects.filter(code=symbol).exists()
+    if not exists:
+        # No such FX security, assume USD (1)
+        return Decimal("1")
+
+    # Now try to get the closest price on or before as_of
+    quote = (
+        SecurityPrice.objects
+        .filter(
+            security__code=symbol,
+            date__lte=as_of,
+            close__gt=0  # bỏ mấy thằng close = 0
+        )
+        .order_by("-date")
+        .first()
+    )
+
+    if not quote:
+        # No price data for that date or earlier → raise error or fallback
+        raise ValueError(f"Missing FX rate for {currency} on or before {as_of}")
+
+    return Decimal("1") / quote.close
+
+
+def _recalc_portfolio(user, day):
+    """Aggregate all account balances for `user` on `day` → USD totals."""
+    qs = (
+        AccountBalance.objects
+        .select_related('account')
+        .filter(account__user=user, date=day)
+    )
+
+    totals = {
+        'principal': Decimal('0'),
+        'balance'  : Decimal('0'),
+        'float'    : Decimal('0'),
+        'fee'      : Decimal('0'),
+        'tax'      : Decimal('0'),
+    }
+
+    for bal in qs:
+        fx = fx_to_usd(bal.account.currency, bal.date)
+        totals['principal'] += (bal.principal or 0) * fx
+        totals['balance']   += (bal.balance   or 0) * fx
+        totals['float']     += (bal.float     or 0) * fx
+        totals['fee']       += (bal.fee       or 0) * fx
+        totals['tax']       += (bal.tax       or 0) * fx
+
+    PortfolioPerformance.objects.update_or_create(
+        user=user,
+        date=day,
+        defaults=totals,
+    )

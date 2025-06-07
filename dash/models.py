@@ -87,13 +87,54 @@ class AccountBalance(models.Model):
     def equity(self):
         return self.balance + self.float
     
+    @property
+    def profit(self):
+        return self.equity - self.principal
+    
+    @property
+    def profit_percent(self):
+        principal = self.principal or 0
+        if principal == 0:
+            return 0
+        return (self.equity - principal) / principal
+    
     def __str__(self):
         return f"{self.account.name} - {self.date}: {self.balance}"
+    
+class PortfolioPerformance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='portfolio')
+    date = models.DateField(default=date.today)
+    principal = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    float = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+    class Meta:
+        unique_together = ('user', 'date')  # 1 balance / day
+    
+    @property
+    def equity(self):
+        return self.balance + self.float
+    
+    @property
+    def profit(self):
+        return self.equity - self.principal
+    
+    @property
+    def profit_percent(self):
+        principal = self.principal or 0
+        if principal == 0:
+            return 0
+        return 100 * (self.equity - principal) / principal
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.date}: {self.balance}"
 
 
 class Transaction(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transaction')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transaction')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     type = models.CharField(max_length=20, choices=[
         ('deposit', 'Deposit'),
         ('withdrawal', 'Withdrawal'),
@@ -130,7 +171,7 @@ class TradeEntry(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='entries')
     security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='entries')
 
-    quantity = models.DecimalField(max_digits=16, decimal_places=2)
+    quantity = models.DecimalField(max_digits=16, decimal_places=4)
     price = models.DecimalField(max_digits=16, decimal_places=2)
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
@@ -173,7 +214,7 @@ class TradeExit(models.Model):
     entry = models.ForeignKey(TradeEntry, on_delete=models.CASCADE, related_name='exits')
 
     price = models.DecimalField(max_digits=16, decimal_places=2)
-    quantity = models.DecimalField(max_digits=16, decimal_places=2)  # Allow partial
+    quantity = models.DecimalField(max_digits=16, decimal_places=4)  # Allow partial
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     date = models.DateField(default=date.today)

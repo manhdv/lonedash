@@ -9,8 +9,6 @@ from django.shortcuts import get_object_or_404
 from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit
 from .forms import AccountForm, TransactionForm, EntryForm
 
-from .tasks import update_security_prices_for_user
-
 @require_POST
 def transaction_create_api(request):
     try:
@@ -89,6 +87,11 @@ def account_update_api(request, id):
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
+        if account.transactions.exists():
+            return JsonResponse({'error': 'Account has transactions. Cannot delete.'}, status=400)
+        elif account.entries.exists():
+            return JsonResponse({'error': 'Account has trade entry. Cannot delete.'}, status=400)
+        # có thể check thêm TradeEntry, TradeExit nếu cần
         account.delete()
         return JsonResponse({'success': True})
 
@@ -168,7 +171,6 @@ def security_add_api(request):
             'api_source': api_source,
         }
     )
-    update_security_prices_for_user(request.user)
     return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @require_http_methods(["DELETE"])

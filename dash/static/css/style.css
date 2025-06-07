@@ -94,3 +94,9 @@
 .table td {
   vertical-align: middle;
 }
+
+@media (max-width: 768px) {
+  .d-flex > div {
+    flex-basis: 100% !important;
+  }
+}

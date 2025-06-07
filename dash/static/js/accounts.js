@@ -1,7 +1,4 @@
-function getCSRFToken() {
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : '';
-}
+
 
 document.querySelectorAll('.btn-delete-transaction').forEach(button => {
     button.addEventListener('click', function () {
@@ -18,10 +15,10 @@ document.querySelectorAll('.btn-delete-transaction').forEach(button => {
                     if (res.ok) {
                         location.reload(); // hoặc remove row khỏi DOM nếu muốn fancy
                     } else {
-                        alert('Failed to delete transaction.');
+                        showError('Failed to delete transaction.');
                     }
                 })
-                .catch(() => alert('Request failed.'));
+                .catch(() => showError('Request failed.'));
         }
     });
 });
@@ -42,7 +39,7 @@ document.querySelectorAll('.btn-edit-transaction').forEach(button => {
                 new bootstrap.Modal(modalEl).show();
             })
             .catch(err => {
-                alert('Could not load transaction form.');
+                showError('Could not load transaction form.');
                 console.error(err);
             });
 
@@ -114,7 +111,7 @@ document.addEventListener('submit', function (e) {
                         }
                     });
                 } else {
-                    alert('Error updating transaction');
+                    showError('Error updating transaction');
                 }
             });
     }
@@ -132,14 +129,15 @@ document.addEventListener('click', (e) => {
                     'X-CSRFToken': getCSRFToken()
                 }
             })
-                .then(res => {
-                    if (res.ok) {
-                        location.reload(); // hoặc tự remove row nếu thích sống ảo
-                    } else {
-                        alert('Failed to delete account.');
-                    }
-                })
-                .catch(() => alert('Request failed.'));
+            .then(res => {
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    return res.json().then(data => {
+                        showError(data.error || 'Failed to delete account.');
+                    });
+                }
+            })
         }
     }
 });
@@ -169,7 +167,7 @@ document.querySelectorAll('.btn-edit_account').forEach(button => {
                 new bootstrap.Modal(modalEl).show();
             })
             .catch(err => {
-                alert('Could not load account form.');
+                showError('Could not load account form.');
                 console.error(err);
             });
     });
@@ -223,7 +221,7 @@ document.addEventListener('submit', (e) => {
                         input.insertAdjacentElement('afterend', errDiv);
                     }
                 } else {
-                    alert('Error updating account');
+                    showError('Error updating account');
                 }
             });
     }

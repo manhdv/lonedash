@@ -1,7 +1,3 @@
-function getCSRFToken() {
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : '';
-}
 
 document.addEventListener('click', function (e) {
     if (e.target) {
@@ -37,10 +33,10 @@ document.querySelectorAll('.btn-delete-entry').forEach(button => {
                     if (res.ok) {
                         location.reload(); // hoặc bạn có thể remove row DOM nếu thích
                     } else {
-                        alert('Failed to delete entry.');
+                        showError('Failed to delete entry.');
                     }
                 })
-                .catch(() => alert('Request failed.'));
+                .catch(() => showError('Request failed.'));
         }
     });
 });

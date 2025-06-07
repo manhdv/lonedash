@@ -1,181 +1,82 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}Dashboard{% endblock %}
 
+{% block content %}
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
   <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-      <div class="btn-group me-2"> <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-      </div>
-      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
-        <svg class="bi" aria-hidden="true">
-          <use xlink:href="#calendar3"></use>
-        </svg>
-        This week
-      </button>
-    </div>
+    <h2 class="mb-0">Dashboard</h2>
   </div>
-  <!-- Performance bar -->
-  <div class="d-flex flex-wrap mb-4 p-3 gap-3">
-    <div class="flex-fill min-width-150">
-      <h6>Equity</h6>
-      <p class="mb-0 text-success">5600 USD</p>
-    </div>
-    <div class="flex-fill min-width-150">
-      <h6>Profit</h6>
-      <p class="mb-0 text-success">600</p>
-    </div>
-    <div class="flex-fill min-width-150">
-      <h6>Portfolio Return</h6>
-      <p class="mb-0 text-success">+12.5%</p>
-    </div>
-    <div class="flex-fill min-width-150">
-      <h6>Annualized Return</h6>
-      <p class="mb-0 text-success">+8.3%</p>
-    </div>
-    <div class="flex-fill min-width-150">
-      <h6>Max Drawdown</h6>
-      <p class="mb-0 text-danger">-7.2%</p>
-    </div>
-    <div class="flex-fill min-width-150">
-      <h6>Cash Balance</h6>
-      <p class="mb-0 text-primary">1,200 USD</p>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h4 class="mb-0">Performance</h4>
+  </div>
+
+<div class="d-flex border-bottom pb-3" style="gap: 1rem;">
+  <div style="flex: 1 1 18%;">
+    <div class="card w-100">
+      <div class="card-body">
+        <h5 class="card-title">Equity</h5>
+        <p class="card-text {% if portfolio.equity > 0 %}text-success{% elif portfolio.equity < 0 %}text-danger{% else %}text-muted{% endif %}">
+          ${{ portfolio.equity|floatformat:2 }}
+        </p>
+      </div>
     </div>
   </div>
 
-  <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
-  <h2>Total Assets</h2>
-  <div class="table-responsive small">
-    <table class="table table-striped table-sm">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1,001</td>
-          <td>random</td>
-          <td>data</td>
-          <td>placeholder</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,002</td>
-          <td>placeholder</td>
-          <td>irrelevant</td>
-          <td>visual</td>
-          <td>layout</td>
-        </tr>
-        <tr>
-          <td>1,003</td>
-          <td>data</td>
-          <td>rich</td>
-          <td>dashboard</td>
-          <td>tabular</td>
-        </tr>
-        <tr>
-          <td>1,003</td>
-          <td>information</td>
-          <td>placeholder</td>
-          <td>illustrative</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,004</td>
-          <td>text</td>
-          <td>random</td>
-          <td>layout</td>
-          <td>dashboard</td>
-        </tr>
-        <tr>
-          <td>1,005</td>
-          <td>dashboard</td>
-          <td>irrelevant</td>
-          <td>text</td>
-          <td>placeholder</td>
-        </tr>
-        <tr>
-          <td>1,006</td>
-          <td>dashboard</td>
-          <td>illustrative</td>
-          <td>rich</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,007</td>
-          <td>placeholder</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>irrelevant</td>
-        </tr>
-        <tr>
-          <td>1,008</td>
-          <td>random</td>
-          <td>data</td>
-          <td>placeholder</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,009</td>
-          <td>placeholder</td>
-          <td>irrelevant</td>
-          <td>visual</td>
-          <td>layout</td>
-        </tr>
-        <tr>
-          <td>1,010</td>
-          <td>data</td>
-          <td>rich</td>
-          <td>dashboard</td>
-          <td>tabular</td>
-        </tr>
-        <tr>
-          <td>1,011</td>
-          <td>information</td>
-          <td>placeholder</td>
-          <td>illustrative</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,012</td>
-          <td>text</td>
-          <td>placeholder</td>
-          <td>layout</td>
-          <td>dashboard</td>
-        </tr>
-        <tr>
-          <td>1,013</td>
-          <td>dashboard</td>
-          <td>irrelevant</td>
-          <td>text</td>
-          <td>visual</td>
-        </tr>
-        <tr>
-          <td>1,014</td>
-          <td>dashboard</td>
-          <td>illustrative</td>
-          <td>rich</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-      </tbody>
-    </table>
+  <div style="flex: 1 1 18%;">
+    <div class="card w-100">
+      <div class="card-body">
+        <h5 class="card-title">Profit</h5>
+        <p class="card-text {% if portfolio.profit > 0 %}text-success{% elif portfolio.profit < 0 %}text-danger{% else %}text-muted{% endif %}">
+          ${{ portfolio.profit|floatformat:2 }}
+        </p>
+      </div>
+    </div>
   </div>
+
+  <div style="flex: 1 1 18%;">
+    <div class="card w-100">
+      <div class="card-body">
+        <h5 class="card-title">Return</h5>
+        <p class="card-text {% if portfolio.profit_percent > 0 %}text-success{% elif portfolio.profit_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
+          {{ portfolio.profit_percent|floatformat:2 }}%
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 1 1 18%;">
+    <div class="card w-100">
+      <div class="card-body">
+        <h5 class="card-title">Drawdown</h5>
+        <p class="card-text {% if portfolio.max_drawdown > 0 %}text-danger{% elif portfolio.max_drawdown < 0 %}text-success{% else %}text-muted{% endif %}">
+          {{ portfolio.max_drawdown|floatformat:2 }}%
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 1 1 18%;">
+    <div class="card w-100">
+      <div class="card-body">
+        <h5 class="card-title">Cash</h5>
+        <p class="card-text text-info">
+          ${{ portfolio.balance|floatformat:2 }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="d-flex justify-content-between align-items-center mb-2 pt-3">
+    <h4 class="mb-0">Equity chart</h4>
+  </div>
+  <canvas class="my-4 w-100" id="myChart"></canvas>
+
 </main>
 
+<div id="modal-container"></div>
 {% endblock %}
 
 {% block page_scripts %}

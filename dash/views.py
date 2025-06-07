@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice
+from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance
 from .forms import AccountForm, TransactionForm, EntryForm
 
 from django.db.models import Prefetch
@@ -23,7 +23,9 @@ def get_icons_svg():
 
 
 def dash_view(request):
-    return render(request, 'dash.html', {'icons_svg': get_icons_svg()})
+    portfolio = PortfolioPerformance.objects.filter(user=request.user).order_by('-date').first()
+
+    return render(request, 'dash.html', {'icons_svg': get_icons_svg(), 'portfolio': portfolio})
 
 def accounts_view(request):
     balances_qs = AccountBalance.objects.filter(date__lte=date.today()).order_by('-date')
