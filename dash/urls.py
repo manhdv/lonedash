@@ -25,7 +25,8 @@ from .apis import (
     security_add_api,
     security_update_api,
     entry_add_api,
-    entry_update_api
+    entry_update_api,
+    portfolio_chart_api
 )
 
 #Views
@@ -69,4 +70,6 @@ urlpatterns += [
 
     path('api/entry/add/', entry_add_api, name='entry_add_api'),
     path('api/entry/<int:id>/', entry_update_api, name='entry_update_api'),
+
+    path('api/portfolio/data/', portfolio_chart_api, name='portfolio_chart_api'),
 ]

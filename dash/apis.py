@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 
 from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit
+from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit, PortfolioPerformance
 from .forms import AccountForm, TransactionForm, EntryForm
 
 @require_POST
@@ -226,3 +226,13 @@ def entry_update_api(request, id):
 
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
+    
+
+def portfolio_chart_api(request):
+    data = PortfolioPerformance.objects.filter(user=request.user).order_by('date')
+    chart_data = {
+        "labels": [p.date.strftime('%Y-%m-%d') for p in data],
+        "principal": [float(p.principal) for p in data],
+        "equity": [float(p.equity) for p in data],
+    }
+    return JsonResponse(chart_data)

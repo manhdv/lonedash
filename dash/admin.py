@@ -75,6 +75,6 @@ class TradeExitAdmin(admin.ModelAdmin):
 
 @admin.register(PortfolioPerformance)
 class PortfolioPerformanceAdmin(admin.ModelAdmin):
-    list_display = ('user', 'date', 'balance', 'float', 'principal', 'fee', 'tax', 'profit', 'profit_percent')
+    list_display = ('user', 'date', 'balance', 'equity', 'principal', 'fee', 'tax', 'profit')
     list_filter = ('user', 'date')
     search_fields = ('user__username',)

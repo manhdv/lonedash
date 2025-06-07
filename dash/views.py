@@ -23,9 +23,12 @@ def get_icons_svg():
 
 
 def dash_view(request):
-    portfolio = PortfolioPerformance.objects.filter(user=request.user).order_by('-date').first()
-
-    return render(request, 'dash.html', {'icons_svg': get_icons_svg(), 'portfolio': portfolio})
+    portfolio = PortfolioPerformance.objects.filter(user=request.user).order_by('date').last()
+    
+    return render(request, 'dash.html', {
+        'icons_svg': get_icons_svg(),
+        'portfolio': portfolio
+    })
 
 def accounts_view(request):
     balances_qs = AccountBalance.objects.filter(date__lte=date.today()).order_by('-date')

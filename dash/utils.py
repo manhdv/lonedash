@@ -139,7 +139,9 @@ def _calc_float_equity(account, on_date):
     def latest_before(sec_id):
         obj = (
             SecurityPrice.objects.filter(
-                security_id=sec_id, date__lte=on_date
+                security_id=sec_id,
+                date__lt=on_date,  # exclude today to avoid zero fallback
+                close__gt=0        # ensure valid price
             )
             .order_by("-date")
             .first()
@@ -148,10 +150,13 @@ def _calc_float_equity(account, on_date):
 
     equity = Decimal("0")
     for sec_id, qty in holdings.items():
-        price = price_map.get(sec_id) or latest_before(sec_id)
+        price_today = price_map.get(sec_id)
+        price = price_today if price_today and price_today > 0 else latest_before(sec_id)
         if price:
             equity += qty * price
+
     return equity
+
 
 
 
