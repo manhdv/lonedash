@@ -12,11 +12,12 @@ from .models import (
     PortfolioPerformance,
     TradeEntry,
     TradeExit,
-    SecurityPrice
+    SecurityPrice,
+    Transaction
 )
 
 
-def update_account(account, start_date=None):
+def utils_update_account(account, start_date=None):
     """
     Re-compute balance / fee / tax / principal *and* equity‐float for `account`
     starting from `start_date`.
@@ -98,7 +99,7 @@ def update_account(account, start_date=None):
         # ------------------------------------------------------------------ #
         # 3️⃣  TÍNH equity-float cho current
         # ------------------------------------------------------------------ #
-        float_equity = _calc_float_equity(account, current)
+        float_equity = utils_calc_float_equity(account, current)
 
         AccountBalance.objects.update_or_create(
             account=account,
@@ -117,7 +118,7 @@ def update_account(account, start_date=None):
 # ---------------------------------------------------------------------- #
 #  🔧  HÀM PHỤ: tính equity-float cho một ngày cụ thể
 # ---------------------------------------------------------------------- #
-def _calc_float_equity(account, on_date):
+def utils_calc_float_equity(account, on_date):
     entries = TradeEntry.objects.filter(account=account)
     holdings = defaultdict(Decimal)
     fallback_price = {}  # entry fallback price by security
@@ -171,10 +172,10 @@ def _calc_float_equity(account, on_date):
 
 
 
-def fetch_security_prices_eodhd(security_code, period_days=90, start_date=None):
+def utils_fetch_security_prices_eodhd(security_code, period_days=90, start_date=None):
     """
     Trả về list dict {'date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume'}
-    cho security_code, tối đa 90 ngày gần nhất (free plan), giống fetch_security_prices_yahoo.
+    cho security_code, tối đa 90 ngày gần nhất (free plan), giống utils_fetch_security_prices_yahoo.
     Nếu có start_date thì sẽ lọc lại sau khi fetch.
     """
     api_key = Setting.objects.values_list("key_eodhd", flat=True).first() or ""
@@ -220,7 +221,7 @@ def fetch_security_prices_eodhd(security_code, period_days=90, start_date=None):
     return prices
 
 
-def fetch_security_prices_yahoo(security_code, period_days=90, start_date=None):
+def utils_fetch_security_prices_yahoo(security_code, period_days=90, start_date=None):
     # Xác định range param cho yahoo API
     # Nếu start_date có, tính từ đó đến hôm nay, else 3 tháng
     end_date = timezone.now().date()
@@ -261,7 +262,7 @@ def fetch_security_prices_yahoo(security_code, period_days=90, start_date=None):
     return prices
 
 
-def update_security_prices_for_user(user):
+def utils_update_security_prices_for_user(user):
     securities = Security.objects.filter(user=user)
     for security in securities:
         latest_price = SecurityPrice.objects.filter(security=security).order_by('-date').first()
@@ -275,7 +276,7 @@ def update_security_prices_for_user(user):
 
         if security.api_source == 'eodhd':
             symbol = f"{security.code}.{security.exchange}"
-            prices = fetch_security_prices_eodhd(symbol, start_date=start_date)
+            prices = utils_fetch_security_prices_eodhd(symbol, start_date=start_date)
             if not prices:
                 continue
 
@@ -297,7 +298,7 @@ def update_security_prices_for_user(user):
 
 
         elif security.api_source == 'yahoo' or not security.api_source:
-            prices = fetch_security_prices_yahoo(security.code, start_date=start_date)
+            prices = utils_fetch_security_prices_yahoo(security.code, start_date=start_date)
             if not prices:
                 continue
 
@@ -320,38 +321,54 @@ def update_security_prices_for_user(user):
 
 # ---- helper -------------------------------------------------------------
 
-def fx_to_usd(currency: str, as_of: date) -> Decimal:
+
+
+
+def utils_fx_to_usd(currency: str, as_of: date) -> Decimal:
+    # USD thì khỏi tra cứu
     if currency.upper() == "USD":
         return Decimal("1")
 
     symbol = f"{currency.upper()}=X"
-
-    # Check if Security with this symbol exists at all
-    exists = Security.objects.filter(code=symbol).exists()
-    if not exists:
-        # No such FX security, assume USD (1)
+    if not Security.objects.filter(code=symbol).exists():
+        # Không có mã FX này → coi như 1:1
         return Decimal("1")
 
-    # Now try to get the closest price on or before as_of
+    # 1) Tìm giá gần nhất về quá khứ (<= as_of)
     quote = (
         SecurityPrice.objects
         .filter(
             security__code=symbol,
             date__lte=as_of,
-            close__gt=0  # bỏ mấy thằng close = 0
+            close__gt=0
         )
-        .order_by("-date")
+        .order_by('-date')
         .first()
     )
 
-    if not quote:
-        # No price data for that date or earlier → raise error or fallback
-        raise ValueError(f"Missing FX rate for {currency} on or before {as_of}")
+    if quote is None:
+        # 2) Không có quá khứ → lấy giá sớm nhất sau as_of
+        quote = (
+            SecurityPrice.objects
+            .filter(
+                security__code=symbol,
+                date__gt=as_of,
+                close__gt=0
+            )
+            .order_by('date')
+            .first()
+        )
 
+    if quote is None:
+        # 3) Bó tay, fallback 1:1
+        return Decimal("1")
+
+    # USD per 1 unit currency
     return Decimal("1") / quote.close
 
 
-def _recalc_portfolio(user, day):
+
+def utils_recalc_portfolio(user, day):
     """Aggregate all account balances for `user` on `day` → USD totals."""
     qs = (
         AccountBalance.objects
@@ -368,15 +385,43 @@ def _recalc_portfolio(user, day):
     }
 
     for bal in qs:
-        fx = fx_to_usd(bal.account.currency.code, bal.date)
+        fx = utils_fx_to_usd(bal.account.currency.code, bal.date)
         totals['principal'] += (bal.principal or 0) * fx
         totals['balance']   += (bal.balance   or 0) * fx
         totals['float']     += (bal.float     or 0) * fx
         totals['fee']       += (bal.fee       or 0) * fx
         totals['tax']       += (bal.tax       or 0) * fx
 
+    # Tính transaction trong ngày đó
+    txs = Transaction.objects.filter(account__user=user, date=day)
+    total_tx = Decimal('0')
+    for tx in txs:
+        fx = utils_fx_to_usd(tx.account.currency.code, tx.date)
+        total_tx += tx.net_amount() * fx
+
+    totals['transaction'] = total_tx
+
     PortfolioPerformance.objects.update_or_create(
         user=user,
         date=day,
         defaults=totals,
     )
+
+
+def utils_calculate_max_drawdown(data):
+    max_nav = Decimal('0')
+    max_dd = Decimal('0')
+
+    for p in data:
+        if p.principal > 0:
+            nav = p.equity / p.principal
+        else:
+            nav = Decimal('1')  # hoặc continue nếu muốn bỏ qua ngày không đầu tư
+
+        if nav > max_nav:
+            max_nav = nav
+        dd = (max_nav - nav) / max_nav if max_nav > 0 else 0
+        if dd > max_dd:
+            max_dd = dd
+
+    return round(max_dd * 100, 2)

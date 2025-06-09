@@ -48,9 +48,9 @@
   <div style="flex: 1 1 18%;">
     <div class="card w-100">
       <div class="card-body">
-        <h5 class="card-title">Drawdown</h5>
-        <p class="card-text {% if portfolio.max_drawdown > 0 %}text-danger{% elif portfolio.max_drawdown < 0 %}text-success{% else %}text-muted{% endif %}">
-          {{ portfolio.max_drawdown|floatformat:2 }}%
+        <h5 class="card-title">Max DD</h5>
+        <p class="card-text text-danger">
+          {{ max_dd|floatformat:2 }}%
         </p>
       </div>
     </div>

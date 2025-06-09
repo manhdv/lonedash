@@ -9,13 +9,13 @@ from django.shortcuts import get_object_or_404
 
 from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit, PortfolioPerformance
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
-from .utils import update_account, update_security_prices_for_user
+from .utils import utils_update_account, utils_update_security_prices_for_user
 
 from collections import defaultdict
 
 
 @require_POST
-def transaction_create_api(request):
+def api_transaction_create(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -26,14 +26,14 @@ def transaction_create_api(request):
         transaction = form.save(commit=False)
         transaction.user = request.user
         transaction.save()
-        update_account(transaction.account, transaction.date)
+        utils_update_account(transaction.account, transaction.date)
         return JsonResponse({'success': True, 'id': transaction.id})
     else:
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-def transaction_update_api(request, id):
+def api_transaction_update(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
 
     if request.method in ["PUT", "PATCH"]:
@@ -48,7 +48,7 @@ def transaction_update_api(request, id):
         if form.is_valid():
             updated_transaction = form.save()
             min_date = min(old_date, updated_transaction.date)
-            update_account(updated_transaction.account, min_date)
+            utils_update_account(updated_transaction.account, min_date)
             # Debug output
             print("=== Transaction Update Debug ===")
             print("Old date:", old_date)
@@ -63,7 +63,7 @@ def transaction_update_api(request, id):
         recalc_date = transaction.date
         account = transaction.account
         transaction.delete()
-        update_account(account, recalc_date)
+        utils_update_account(account, recalc_date)
         return JsonResponse({'success': True})
 
     else:
@@ -71,7 +71,7 @@ def transaction_update_api(request, id):
 
 
 @require_POST
-def account_create_api(request):
+def api_account_create(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -89,7 +89,7 @@ def account_create_api(request):
 
 
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-def account_update_api(request, id):
+def api_account_update(request, id):
     account = get_object_or_404(Account, id=id)
 
     if request.method in ["PUT", "PATCH"]:
@@ -111,7 +111,7 @@ def account_update_api(request, id):
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
-def security_search_api(request):
+def api_security_search(request):
     q = request.GET.get('q', '')
     if not q:
         return JsonResponse({'error': 'Missing query'}, status=400)
@@ -154,7 +154,7 @@ def security_search_api(request):
     return JsonResponse({'yahoo': yahoo_results, 'eodhd': eodhd_results})
 
 
-def security_add_api(request):
+def api_security_add(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -177,11 +177,11 @@ def security_add_api(request):
         }
     )
 
-    update_security_prices_for_user(request.user)
+    utils_update_security_prices_for_user(request.user)
     return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @require_http_methods(["DELETE"])
-def security_update_api(request, id):
+def api_security_update(request, id):
     securitiy = get_object_or_404(Security, id=id)
     if request.method == "DELETE":
         securitiy.delete()
@@ -192,7 +192,7 @@ def security_update_api(request, id):
 
 
 @require_http_methods(["POST", "PUT"])
-def entry_add_api(request):
+def api_entry_add(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -203,7 +203,7 @@ def entry_add_api(request):
         entry = form.save(commit=False)
         entry.save()
 
-        update_account(entry.account, entry.date)
+        utils_update_account(entry.account, entry.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -211,7 +211,7 @@ def entry_add_api(request):
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-def entry_update_api(request, id):
+def api_entry_update(request, id):
     entry = get_object_or_404(TradeEntry, id=id)
 
     if request.method in ["PUT", "PATCH"]:
@@ -226,20 +226,20 @@ def entry_update_api(request, id):
         if form.is_valid():
             updated_entry = form.save()
             min_date = min(old_date, updated_entry.date)
-            update_account(updated_entry.account, min_date)
+            utils_update_account(updated_entry.account, min_date)
             return JsonResponse({'success': True, 'id': entry.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
         entry.delete()
-        update_account(entry.account, entry.date)
+        utils_update_account(entry.account, entry.date)
         return JsonResponse({'success': True})
 
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
 
-def portfolio_chart_api(request):
+def api_portfolio_chart(request):
     # performance series
     perf_qs = PortfolioPerformance.objects.filter(
         user=request.user
@@ -248,26 +248,17 @@ def portfolio_chart_api(request):
     # lấy list ngày để map cho lẹ
     dates = [p.date for p in perf_qs]
 
-    # ----‑ transactions ----‑
-    tx_map = defaultdict(Decimal)
-    tx_qs = Transaction.objects.filter(
-        account__user=request.user,
-        date__in=dates
-    )
-    for tx in tx_qs:
-        tx_map[tx.date] += tx.net_amount()   # net_amount() đã +/- sẵn
-
     # ----‑ build JSON ----‑
     chart_data = {
         "labels":      [d.strftime('%Y-%m-%d') for d in dates],
         "principal":   [float(p.principal) for p in perf_qs],
         "equity":      [float(p.equity)    for p in perf_qs],
-        "transactions":[float(tx_map.get(d, 0)) for d in dates],
+        "transactions":[float(p.transaction)    for p in perf_qs],
     }
     return JsonResponse(chart_data)
 
 @require_http_methods(["POST", "PUT"])
-def exit_add_api(request):
+def api_exit_add(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -278,7 +269,7 @@ def exit_add_api(request):
         exit = form.save(commit=False)
         exit.save()
         
-        update_account(exit.entry.account, exit.date)
+        utils_update_account(exit.entry.account, exit.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -286,7 +277,7 @@ def exit_add_api(request):
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
     
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
-def exit_update_api(request, id):
+def api_exit_update(request, id):
     exit = get_object_or_404(TradeExit, id=id)
 
     if request.method in ["PUT", "PATCH"]:
@@ -301,13 +292,13 @@ def exit_update_api(request, id):
         if form.is_valid():
             updated_exit = form.save()
             min_date = min(old_date, updated_exit.date)
-            update_account(updated_exit.account, min_date)
+            utils_update_account(updated_exit.account, min_date)
             return JsonResponse({'success': True, 'id': exit.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
         exit.delete()
-        update_account(exit.entry.account, exit.date)
+        utils_update_account(exit.entry.account, exit.date)
         return JsonResponse({'success': True})
 
     else:

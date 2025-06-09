@@ -1,7 +1,7 @@
 <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="transaction-form" method="post" action="{% if transaction_form.instance.pk %}{% url 'transaction_update_api' transaction_form.instance.pk %}{% else %}{% url 'transaction_create_api' %}{% endif %}">
+      <form id="transaction-form" method="post" action="{% if transaction_form.instance.pk %}{% url 'api_transaction_update' transaction_form.instance.pk %}{% else %}{% url 'api_transaction_create' %}{% endif %}">
         <div class="modal-header">
           <h5 class="modal-title" id="addTransactionLabel">New Transaction</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

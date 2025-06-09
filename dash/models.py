@@ -121,6 +121,8 @@ class PortfolioPerformance(models.Model):
     fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
+    transaction =  models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
     class Meta:
         unique_together = ('user', 'date')  # 1 balance / day
     

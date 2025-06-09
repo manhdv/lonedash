@@ -18,18 +18,18 @@ from .views import (
 )
 
 from .apis import (
-    transaction_create_api,
-    transaction_update_api,
-    account_create_api,
-    account_update_api,
-    security_search_api,
-    security_add_api,
-    security_update_api,
-    entry_add_api,
-    entry_update_api,
-    exit_add_api,
-    exit_update_api,
-    portfolio_chart_api
+    api_transaction_create,
+    api_transaction_update,
+    api_account_create,
+    api_account_update,
+    api_security_search,
+    api_security_add,
+    api_security_update,
+    api_entry_add,
+    api_entry_update,
+    api_exit_add,
+    api_exit_update,
+    api_portfolio_chart
 )
 
 #Views
@@ -63,20 +63,20 @@ urlpatterns += [
 
 #Apis
 urlpatterns += [
-    path('api/transaction/create/', transaction_create_api, name='transaction_create_api'),
-    path('api/transaction/<int:id>/', transaction_update_api, name='transaction_update_api'),  # PUT, PATCH, DELETE
-    path('api/account/create/', account_create_api, name='account_create_api'),
-    path('api/account/<int:id>/', account_update_api, name='account_update_api'),  # PUT, PATCH, DELETE    
+    path('api/transaction/create/', api_transaction_create, name='api_transaction_create'),
+    path('api/transaction/<int:id>/', api_transaction_update, name='api_transaction_update'),  # PUT, PATCH, DELETE
+    path('api/account/create/', api_account_create, name='api_account_create'),
+    path('api/account/<int:id>/', api_account_update, name='api_account_update'),  # PUT, PATCH, DELETE    
     
-    path('api/security/search/', security_search_api, name='security_search_api'),
-    path('api/security/add/', security_add_api, name='security_add_api'),
-    path('api/security/<int:id>/', security_update_api, name='security_update_api'),  # PUT, PATCH, DELETE
+    path('api/security/search/', api_security_search, name='api_security_search'),
+    path('api/security/add/', api_security_add, name='api_security_add'),
+    path('api/security/<int:id>/', api_security_update, name='api_security_update'),  # PUT, PATCH, DELETE
 
-    path('api/entry/add/', entry_add_api, name='entry_add_api'),
-    path('api/entry/<int:id>/', entry_update_api, name='entry_update_api'),
+    path('api/entry/add/', api_entry_add, name='api_entry_add'),
+    path('api/entry/<int:id>/', api_entry_update, name='api_entry_update'),
 
-    path('api/exit/add/', exit_add_api, name='exit_add_api'),
-    path('api/exit/<int:id>/', exit_update_api, name='exit_update_api'),
+    path('api/exit/add/', api_exit_add, name='api_exit_add'),
+    path('api/exit/<int:id>/', api_exit_update, name='api_exit_update'),
 
-    path('api/portfolio/data/', portfolio_chart_api, name='portfolio_chart_api'),
+    path('api/portfolio/data/', api_portfolio_chart, name='api_portfolio_chart'),
 ]
