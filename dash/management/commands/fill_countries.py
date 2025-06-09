@@ -1,6 +1,6 @@
 # myapp/management/commands/fill_countries.py
 from django.core.management.base import BaseCommand
-from dash.models import Country
+from dash.models import Country, Currency
 
 COUNTRY_DATA = {
     "Afghanistan": "AF",
@@ -199,3 +199,56 @@ class Command(BaseCommand):
             self.stdout.write(f"{action} {name} ({iso})")
 
         self.stdout.write("Done.")
+
+
+Currency.objects.bulk_create([
+    Currency(code='USD', name='US Dollar', symbol='$'),
+    Currency(code='EUR', name='Euro', symbol='€'),
+    Currency(code='JPY', name='Japanese Yen', symbol='¥'),
+    Currency(code='GBP', name='British Pound', symbol='£'),
+    Currency(code='AUD', name='Australian Dollar', symbol='A$'),
+    Currency(code='CAD', name='Canadian Dollar', symbol='C$'),
+    Currency(code='CHF', name='Swiss Franc', symbol='CHF'),
+    Currency(code='CNY', name='Chinese Yuan', symbol='¥'),
+    Currency(code='HKD', name='Hong Kong Dollar', symbol='HK$'),
+    Currency(code='NZD', name='New Zealand Dollar', symbol='NZ$'),
+    Currency(code='SEK', name='Swedish Krona', symbol='kr'),
+    Currency(code='KRW', name='South Korean Won', symbol='₩'),
+    Currency(code='SGD', name='Singapore Dollar', symbol='S$'),
+    Currency(code='NOK', name='Norwegian Krone', symbol='kr'),
+    Currency(code='MXN', name='Mexican Peso', symbol='$'),
+    Currency(code='INR', name='Indian Rupee', symbol='₹'),
+    Currency(code='RUB', name='Russian Ruble', symbol='₽'),
+    Currency(code='ZAR', name='South African Rand', symbol='R'),
+    Currency(code='TRY', name='Turkish Lira', symbol='₺'),
+    Currency(code='BRL', name='Brazilian Real', symbol='R$'),
+    Currency(code='TWD', name='New Taiwan Dollar', symbol='NT$'),
+    Currency(code='DKK', name='Danish Krone', symbol='kr'),
+    Currency(code='PLN', name='Polish Zloty', symbol='zł'),
+    Currency(code='THB', name='Thai Baht', symbol='฿'),
+    Currency(code='IDR', name='Indonesian Rupiah', symbol='Rp'),
+    Currency(code='HUF', name='Hungarian Forint', symbol='Ft'),
+    Currency(code='CZK', name='Czech Koruna', symbol='Kč'),
+    Currency(code='ILS', name='Israeli New Shekel', symbol='₪'),
+    Currency(code='CLP', name='Chilean Peso', symbol='$'),
+    Currency(code='PHP', name='Philippine Peso', symbol='₱'),
+    Currency(code='AED', name='UAE Dirham', symbol='د.إ'),
+    Currency(code='COP', name='Colombian Peso', symbol='$'),
+    Currency(code='SAR', name='Saudi Riyal', symbol='﷼'),
+    Currency(code='MYR', name='Malaysian Ringgit', symbol='RM'),
+    Currency(code='RON', name='Romanian Leu', symbol='lei'),
+    Currency(code='VND', name='Vietnamese Dong', symbol='₫'),
+    Currency(code='EGP', name='Egyptian Pound', symbol='£'),
+    Currency(code='PKR', name='Pakistani Rupee', symbol='₨'),
+    Currency(code='NGN', name='Nigerian Naira', symbol='₦'),
+    Currency(code='BDT', name='Bangladeshi Taka', symbol='৳'),
+    Currency(code='KZT', name='Kazakhstani Tenge', symbol='₸'),
+    Currency(code='UAH', name='Ukrainian Hryvnia', symbol='₴'),
+    Currency(code='LKR', name='Sri Lankan Rupee', symbol='Rs'),
+    Currency(code='KES', name='Kenyan Shilling', symbol='KSh'),
+    Currency(code='MAD', name='Moroccan Dirham', symbol='د.م.'),
+    Currency(code='DZD', name='Algerian Dinar', symbol='دج'),
+    Currency(code='PEN', name='Peruvian Sol', symbol='S/'),
+    Currency(code='ARS', name='Argentine Peso', symbol='$'),
+    Currency(code='IQD', name='Iraqi Dinar', symbol='ع.د'),
+])

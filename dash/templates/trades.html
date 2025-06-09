@@ -34,7 +34,7 @@
                     <td>{{ entry.security }}</td>
                     <td>{{ entry.account }}</td>
                     <td>{{ entry.quantity}}</td>
-                    <td>{{ entry.remaining_quantity}}</td>
+                    <td>{{ entry.remaining_quantity|floatformat:"4"}}</td>
                     <td>{{ entry.price}}</td>
                     <td>{{ entry.fee}}</td>
                     <td>{{ entry.tax }}</td>
@@ -102,8 +102,8 @@
                 {% for exit in exits %}
                 <tr>
                     <td>{{ exit.id }}</td>
-                    <td>{{ exit.security }}</td>
-                    <td>{{ exit.account }}</td>
+                    <td>{{ exit.entry.security }}</td>
+                    <td>{{ exit.entry.account }}</td>
                     <td>{{ exit.quantity}}</td>
                     <td>{{ exit.price}}</td>
                     <td>{{ exit.fee}}</td>

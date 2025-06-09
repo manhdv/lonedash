@@ -64,10 +64,8 @@ def update_account(account, start_date=None):
         daily_changes[tx.date] += tx.net_amount()
         daily_fee[tx.date] += tx.fee
         daily_tax[tx.date] += tx.tax
-        if tx.type == "deposit":
+        if tx.type in ("deposit", "withdrawal"):
             daily_principal[tx.date] += tx.net_amount()
-        elif tx.type == "withdraw":
-            daily_principal[tx.date] -= tx.net_amount()
 
     for entry in entries:
         net = entry.quantity * entry.price + entry.fee + entry.tax
@@ -122,11 +120,18 @@ def update_account(account, start_date=None):
 def _calc_float_equity(account, on_date):
     entries = TradeEntry.objects.filter(account=account)
     holdings = defaultdict(Decimal)
+    fallback_price = {}  # entry fallback price by security
 
     for entry in entries:
-        remain = entry.remaining_quantity(until_date=on_date)
+        remain = entry.remaining_quantity_at(until_date=on_date)
         if remain > 0:
             holdings[entry.security_id] += remain
+            # Ghi nhận giá entry mới nhất làm fallback
+            if (
+                entry.security_id not in fallback_price
+                or entry.date > fallback_price[entry.security_id][0]
+            ):
+                fallback_price[entry.security_id] = (entry.date, entry.price)
 
     if not holdings:
         return Decimal("0")
@@ -140,8 +145,8 @@ def _calc_float_equity(account, on_date):
         obj = (
             SecurityPrice.objects.filter(
                 security_id=sec_id,
-                date__lt=on_date,  # exclude today to avoid zero fallback
-                close__gt=0        # ensure valid price
+                date__lt=on_date,
+                close__gt=0
             )
             .order_by("-date")
             .first()
@@ -151,11 +156,16 @@ def _calc_float_equity(account, on_date):
     equity = Decimal("0")
     for sec_id, qty in holdings.items():
         price_today = price_map.get(sec_id)
-        price = price_today if price_today and price_today > 0 else latest_before(sec_id)
+        price = (
+            price_today if price_today and price_today > 0
+            else latest_before(sec_id)
+            or fallback_price.get(sec_id, (None, None))[1]  # dùng entry.price
+        )
         if price:
             equity += qty * price
 
     return equity
+
 
 
 
@@ -358,7 +368,7 @@ def _recalc_portfolio(user, day):
     }
 
     for bal in qs:
-        fx = fx_to_usd(bal.account.currency, bal.date)
+        fx = fx_to_usd(bal.account.currency.code, bal.date)
         totals['principal'] += (bal.principal or 0) * fx
         totals['balance']   += (bal.balance   or 0) * fx
         totals['float']     += (bal.float     or 0) * fx

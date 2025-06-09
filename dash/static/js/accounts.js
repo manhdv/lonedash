@@ -95,6 +95,8 @@ document.addEventListener('submit', function (e) {
                 location.reload();
             })
             .catch(data => {
+                
+                form.querySelectorAll('.field-error').forEach(el => el.remove());
                 if (data.errors) {
                     Object.keys(data.errors).forEach(field => {
                         const input = document.getElementById(`id_transaction_${field}`);
@@ -210,7 +212,6 @@ document.addEventListener('submit', (e) => {
             .catch(data => {
                 // clear old errors
                 form.querySelectorAll('.field-error').forEach(el => el.remove());
-
                 if (data.errors) {
                     for (const field in data.errors) {
                         const input = document.getElementById(`id_account_${field}`);

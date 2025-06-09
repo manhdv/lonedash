@@ -1,3 +1,4 @@
+from decimal import Decimal
 import requests
 import json
 
@@ -7,7 +8,11 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.shortcuts import get_object_or_404
 
 from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit, PortfolioPerformance
-from .forms import AccountForm, TransactionForm, EntryForm
+from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
+from .utils import update_account, update_security_prices_for_user
+
+from collections import defaultdict
+
 
 @require_POST
 def transaction_create_api(request):
@@ -21,6 +26,7 @@ def transaction_create_api(request):
         transaction = form.save(commit=False)
         transaction.user = request.user
         transaction.save()
+        update_account(transaction.account, transaction.date)
         return JsonResponse({'success': True, 'id': transaction.id})
     else:
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
@@ -36,16 +42,28 @@ def transaction_update_api(request, id):
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
 
+        old_date = transaction.date  # lấy ngày trước khi update
+
         form = TransactionForm(data, instance=transaction, user=request.user)
         if form.is_valid():
             updated_transaction = form.save()
+            min_date = min(old_date, updated_transaction.date)
+            update_account(updated_transaction.account, min_date)
+            # Debug output
+            print("=== Transaction Update Debug ===")
+            print("Old date:", old_date)
+            print("New date:", updated_transaction.date)
+            print("Max date used:", min_date)
+            print("Account ID:", updated_transaction.account.id)
+            print("Account Name:", updated_transaction.account.name)  # assuming there's a name field
+            print("================================")
             return JsonResponse({'success': True, 'id': transaction.id})
-        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
         recalc_date = transaction.date
         account = transaction.account
         transaction.delete()
+        update_account(account, recalc_date)
         return JsonResponse({'success': True})
 
     else:
@@ -87,11 +105,6 @@ def account_update_api(request, id):
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
-        if account.transactions.exists():
-            return JsonResponse({'error': 'Account has transactions. Cannot delete.'}, status=400)
-        elif account.entries.exists():
-            return JsonResponse({'error': 'Account has trade entry. Cannot delete.'}, status=400)
-        # có thể check thêm TradeEntry, TradeExit nếu cần
         account.delete()
         return JsonResponse({'success': True})
 
@@ -151,14 +164,7 @@ def security_add_api(request):
     exchange = data.get('exchange')
     name = data.get('name')
     type_ = data.get('type')
-    country_name = data.get('country')
     api_source = data.get('api_source')
-
-    # Handle country
-    try:
-        country_obj = Country.objects.get(name=country_name)
-    except Country.DoesNotExist:
-        country_obj = Country.objects.get(name='Unknown')  # fallback
 
     security, created = Security.objects.get_or_create(
         user=request.user,
@@ -167,10 +173,11 @@ def security_add_api(request):
             'exchange': exchange,
             'name': name,
             'type': type_,
-            'country': country_obj,
             'api_source': api_source,
         }
     )
+
+    update_security_prices_for_user(request.user)
     return JsonResponse({'status': 'ok' if created else 'exists'})
 
 @require_http_methods(["DELETE"])
@@ -194,8 +201,9 @@ def entry_add_api(request):
     form = EntryForm(data)
     if form.is_valid():
         entry = form.save(commit=False)
-        entry.user = request.user
         entry.save()
+
+        update_account(entry.account, entry.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -204,7 +212,7 @@ def entry_add_api(request):
     
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 def entry_update_api(request, id):
-    entry = get_object_or_404(TradeEntry, id=id, user=request.user)
+    entry = get_object_or_404(TradeEntry, id=id)
 
     if request.method in ["PUT", "PATCH"]:
         try:
@@ -212,27 +220,95 @@ def entry_update_api(request, id):
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
 
-        form = EntryForm(data, instance=entry, user=request.user)
+        old_date = entry.date  # lấy ngày cũ trước khi save
+
+        form = EntryForm(data, instance=entry)
         if form.is_valid():
             updated_entry = form.save()
+            min_date = min(old_date, updated_entry.date)
+            update_account(updated_entry.account, min_date)
             return JsonResponse({'success': True, 'id': entry.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
-        account = entry.account
-        date = entry.date
         entry.delete()
+        update_account(entry.account, entry.date)
         return JsonResponse({'success': True})
 
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
-    
+
 
 def portfolio_chart_api(request):
-    data = PortfolioPerformance.objects.filter(user=request.user).order_by('date')
+    # performance series
+    perf_qs = PortfolioPerformance.objects.filter(
+        user=request.user
+    ).order_by('date')
+
+    # lấy list ngày để map cho lẹ
+    dates = [p.date for p in perf_qs]
+
+    # ----‑ transactions ----‑
+    tx_map = defaultdict(Decimal)
+    tx_qs = Transaction.objects.filter(
+        account__user=request.user,
+        date__in=dates
+    )
+    for tx in tx_qs:
+        tx_map[tx.date] += tx.net_amount()   # net_amount() đã +/- sẵn
+
+    # ----‑ build JSON ----‑
     chart_data = {
-        "labels": [p.date.strftime('%Y-%m-%d') for p in data],
-        "principal": [float(p.principal) for p in data],
-        "equity": [float(p.equity) for p in data],
+        "labels":      [d.strftime('%Y-%m-%d') for d in dates],
+        "principal":   [float(p.principal) for p in perf_qs],
+        "equity":      [float(p.equity)    for p in perf_qs],
+        "transactions":[float(tx_map.get(d, 0)) for d in dates],
     }
     return JsonResponse(chart_data)
+
+@require_http_methods(["POST", "PUT"])
+def exit_add_api(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'errors': 'Invalid JSON'}, status=400)
+
+    form = ExitForm(data, user=request.user)
+    if form.is_valid():
+        exit = form.save(commit=False)
+        exit.save()
+        
+        update_account(exit.entry.account, exit.date)
+        return JsonResponse({'status': 'ok'})
+    else:
+        print('Form errors:', form.errors.as_json())
+
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+    
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
+def exit_update_api(request, id):
+    exit = get_object_or_404(TradeExit, id=id)
+
+    if request.method in ["PUT", "PATCH"]:
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'errors': 'Invalid JSON'}, status=400)
+
+        old_date = exit.date  # lấy ngày cũ trước khi save
+
+        form = ExitForm(data, instance=exit)
+        if form.is_valid():
+            updated_exit = form.save()
+            min_date = min(old_date, updated_exit.date)
+            update_account(updated_exit.account, min_date)
+            return JsonResponse({'success': True, 'id': exit.id})
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
+
+    elif request.method == "DELETE":
+        exit.delete()
+        update_account(exit.entry.account, exit.date)
+        return JsonResponse({'success': True})
+
+    else:
+        return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])

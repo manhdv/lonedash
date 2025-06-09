@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 
 from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance
-from .forms import AccountForm, TransactionForm, EntryForm
+from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 
 from django.db.models import Prefetch
 from django.db.models import OuterRef, Subquery
@@ -139,21 +139,27 @@ def securities_view(request):
 
 
 def trades_view(request):
-    entries_list = TradeEntry.objects.filter(user=request.user).order_by('-id')
+    entries_list = TradeEntry.objects.filter(account__user=request.user).order_by('-id')
     entries_paginator = Paginator(entries_list, 10)
     entries_page = entries_paginator.get_page(request.GET.get('entries_page'))
 
-    exits_list = TradeExit.objects.filter(entry__user=request.user).order_by('-id')
+    exits_list = TradeExit.objects.filter(entry__account__user=request.user).order_by('-id')
     exits_paginator = Paginator(exits_list, 10)
     exits_page = exits_paginator.get_page(request.GET.get('exits_page'))
 
     svg_content = get_icons_svg()
     return render(request, "trades.html", {'icons_svg': svg_content, 'entries' : entries_page, 'exits' : exits_page})
 
-def trade_create_form(request):
+def entry_create_form(request):
     form = EntryForm()
-    return render(request, 'modals/trade_modal.html', {
-        'trade_form': form,
+    return render(request, 'modals/entry_modal.html', {
+        'entry_form': form,
+    })
+
+def exit_create_form(request):
+    form = ExitForm(user=request.user)
+    return render(request, 'modals/exit_modal.html', {
+        'exit_form': form,
     })
 
 def settings_view(request):

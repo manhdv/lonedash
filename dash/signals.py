@@ -9,29 +9,29 @@ from datetime import date as date_dt
 def on_user_login(sender, request, user, **kwargs):
     update_security_prices_for_user(user)
 
-def _affected_accounts_and_date(instance):
-    if isinstance(instance, (TradeEntry, TradeExit, Transaction)):
-        return {instance.account}, instance.date
-    if isinstance(instance, SecurityPrice):
-        entries = TradeEntry.objects.filter(security=instance.security).select_related('account')
-        accounts = set(e.account for e in entries)
-        return accounts, instance.date
-    return set(), None
+#def _affected_accounts_and_date(instance):
+#    if isinstance(instance, (TradeEntry, TradeExit, Transaction)):
+#        return {instance.account}, instance.date
+#    if isinstance(instance, SecurityPrice):
+#        entries = TradeEntry.objects.filter(security=instance.security).select_related('account')
+#        accounts = set(e.account for e in entries)
+#        return accounts, instance.date
+#    return set(), None
 
 
-@receiver([post_save, post_delete], sender=TradeEntry)
-@receiver([post_save, post_delete], sender=TradeExit)
-@receiver([post_save, post_delete], sender=Transaction)
-@receiver([post_save, post_delete], sender=SecurityPrice)
-def auto_update_account(sender, instance, **kwargs):
-    accounts, start_date = _affected_accounts_and_date(instance)
-    for acc in accounts:
-        # Skip if account is being (or has been) deleted
-        if acc is None:
-            continue
-        print(f"DEBUG update_account called with account={acc} (id={acc.id}) and start_date={start_date}")
-
-        update_account(acc, start_date=start_date)
+#@receiver([post_save, post_delete], sender=TradeEntry)
+#@receiver([post_save, post_delete], sender=TradeExit)
+#@receiver([post_save, post_delete], sender=Transaction)
+#@receiver([post_save, post_delete], sender=SecurityPrice)
+#def auto_update_account(sender, instance, **kwargs):
+#    accounts, start_date = _affected_accounts_and_date(instance)
+#    for acc in accounts:
+#        # Skip if account is being (or has been) deleted
+#        if acc is None:
+#            continue
+#        print(f"DEBUG update_account called with account={acc} (id={acc.id}) and start_date={start_date}")
+#
+#        update_account(acc, start_date=start_date)
 
 @receiver([post_save, post_delete], sender=AccountBalance)
 def sync_portfolio_on_balance_change(sender, instance, **kwargs):

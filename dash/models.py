@@ -52,6 +52,16 @@ class EconomicData(models.Model):
     def __str__(self):
         return f'{self.country} - {self.indicator} @ {self.date}: {self.value}'
 
+class Currency(models.Model):
+    code = models.CharField(max_length=10, unique=True)  # 'USD', 'VND', 'JPY'
+    name = models.CharField(max_length=100)              # 'US Dollar'
+    symbol = models.CharField(max_length=5, blank=True)  # '$'
+    # optional: decimal places, is_crypto, exchange_rate, etc.
+
+    def __str__(self):
+        return self.code
+
+
 class Account(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts')
     name = models.CharField(max_length=255)
@@ -59,7 +69,8 @@ class Account(models.Model):
         ('deposit', 'Deposit'),
         ('broker', 'Broker'),
     ])
-    currency = models.CharField(max_length=10, default='USD')
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT,null=True)
+
     active = models.BooleanField(default=True)
 
     # metadata
@@ -167,7 +178,6 @@ class Transaction(models.Model):
         return f"{self.date} - {self.type} - {self.amount}"
 
 class TradeEntry(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='entries')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='entries')
     security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='entries')
 
@@ -200,8 +210,17 @@ class TradeEntry(models.Model):
             qs = qs.filter(date__lte=until_date)
         return qs.aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
 
-    def remaining_quantity(self, until_date=None):
+    @property
+    def remaining_quantity(self) -> Decimal:
+        return self.remaining_quantity_at()
+
+    def remaining_quantity_at(self, until_date=None) -> Decimal:
+        if until_date is None:
+            until_date = date.today()
+        if until_date < self.date:
+            return Decimal('0')
         return self.quantity - self.filled_quantity(until_date)
+
 
     @property
     def is_closed(self):
@@ -223,9 +242,30 @@ class TradeExit(models.Model):
         ordering = ['-date'] 
 
     def clean(self):
-        # Ensure quantity doesn't exceed remaining entry quantity
-        if self.quantity > self.entry.remaining_quantity:
+        if self.entry is None:
+            raise ValidationError("Entry is required")
+
+        rem_qty = self.entry.remaining_quantity
+        if rem_qty is None:
+            raise ValidationError(f"remaining_quantity is None for entry {self.entry.id}")
+
+        if self.quantity is None:
+            raise ValidationError("quantity is required")
+
+        # Thêm cast Decimal cho an toàn
+        quantity = Decimal(self.quantity)
+        remaining = Decimal(rem_qty)
+
+        if quantity > remaining:
             raise ValidationError("Exit quantity cannot exceed remaining entry quantity")
+
+    @property
+    def gross_amount(self):
+        return self.quantity * self.price
+
+    @property
+    def net_amount(self):
+        return self.gross_amount - self.fee - self.tax
        
     @property
     def profit(self):
@@ -246,7 +286,7 @@ class TradeExit(models.Model):
 
 
 class Security(models.Model):
-    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')
+#    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security')
     code = models.CharField(max_length=10)
     exchange = models.CharField(max_length=20)

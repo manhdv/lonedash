@@ -1,0 +1,54 @@
+<div class="modal fade" id="addExitModal" tabindex="-1" aria-labelledby="addExitLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="exit-form" method="post" action="{% url 'exit_add_api' %}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addexitLabel">New trade</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+            {{ exit_form.entry.label_tag }} {{ exit_form.entry }}
+          </div>
+          <div class="row mb-3">
+            <div class="col">
+              {{ exit_form.quantity.label_tag }} {{ exit_form.quantity }}
+            </div>
+            <div class="col">
+              {{ exit_form.price.label_tag }} {{ exit_form.price }}
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col">
+              {{ exit_form.fee.label_tag }} {{ exit_form.fee }}
+            </div>
+            <div class="col">
+              {{ exit_form.tax.label_tag }} {{ exit_form.tax }}
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col">
+              <label for="id_exit_gross_amount" class="form-label">Gross Amount</label>
+              <input type="number" class="form-control" id="id_exit_gross_amount" value="0" disabled >
+            </div>
+            <div class="col">
+              <label for="id_exit_net_amount" class="form-label">Net Amount</label>
+              <input type="number" class="form-control" id="id_exit_net_amount" value="0" disabled >
+            </div>
+          </div>
+          <div class="mb-3">
+            {{ exit_form.date.label_tag }} {{ exit_form.date }}
+          </div>
+          <div class="mb-3">
+            {{ exit_form.note.label_tag }} {{ exit_form.note }}
+          </div>
+          <!-- các field khác render tiếp theo từng block -->
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" name="trade_submit">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

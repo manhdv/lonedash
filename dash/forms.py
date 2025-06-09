@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from .models import Account, Transaction, TradeEntry, TradeExit
-from datetime import date, timedelta
+from django.core.exceptions import ValidationError
 
 class AccountForm(forms.ModelForm):
     class Meta:
@@ -10,7 +10,7 @@ class AccountForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'type': forms.Select(attrs={'class': 'form-select'}),
-            'currency': forms.TextInput(attrs={'class': 'form-control'}),
+            'currency': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
     def __init__(self, *args, **kwargs):
@@ -38,12 +38,7 @@ class TransactionForm(forms.ModelForm):
             field.widget.attrs['id'] = f'id_transaction_{name}'
         if user is not None:
             self.fields['account'].queryset = Account.objects.filter(user=user)
-    
-    def clean_date(self):
-        d = self.cleaned_data.get('date')
-        if d and d < date.today() - timedelta(days=90):
-            raise forms.ValidationError("Not allow to add/edit old transaction.")
-        return d
+
 
 class EntryForm(forms.ModelForm):
     gross_amount = forms.DecimalField(required=False, disabled=True, label='Gross Amount')
@@ -67,5 +62,35 @@ class EntryForm(forms.ModelForm):
         
         #custom fields id
         for name, field in self.fields.items():
-            field.widget.attrs['id'] = f'id_trade_{name}'
+            field.widget.attrs['id'] = f'id_entry_{name}'
 
+class ExitForm(forms.ModelForm):
+    class Meta:
+        model = TradeExit
+        fields = ['entry', 'price', 'quantity', 'fee', 'tax', 'date']
+        widgets = {
+            'entry': forms.Select(attrs={'class': 'form-select'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fee': forms.NumberInput(attrs={'class': 'form-control'}),
+            'tax': forms.NumberInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        for name, field in self.fields.items():
+            field.widget.attrs['id'] = f'id_exit_{name}'
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data['quantity']
+        entry = self.cleaned_data.get('entry')
+        if entry is None:
+            raise ValidationError("Entry is required")
+        elif entry.remaining_quantity is None:
+            raise ValidationError("remaining_quantity is required")
+        if entry and quantity > entry.remaining_quantity:
+            raise ValidationError("Exit quantity cannot exceed remaining entry quantity.")
+        return quantity
