@@ -11,8 +11,6 @@ from .models import Account, Transaction, Setting, Security, Country, TradeEntry
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 from .utils import utils_update_account, utils_update_security_prices_for_user
 
-from collections import defaultdict
-
 
 @require_POST
 def api_transaction_create(request):
@@ -35,6 +33,10 @@ def api_transaction_create(request):
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 def api_transaction_update(request, id):
     transaction = get_object_or_404(Transaction, id=id, user=request.user)
+
+        # Crucial: Check if the requesting user owns the entry
+    if transaction.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
 
     if request.method in ["PUT", "PATCH"]:
         try:
@@ -91,6 +93,10 @@ def api_account_create(request):
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 def api_account_update(request, id):
     account = get_object_or_404(Account, id=id)
+
+    # Crucial: Check if the requesting user owns the entry
+    if account.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
 
     if request.method in ["PUT", "PATCH"]:
         try:
@@ -183,6 +189,11 @@ def api_security_add(request):
 @require_http_methods(["DELETE"])
 def api_security_update(request, id):
     securitiy = get_object_or_404(Security, id=id)
+
+    # Crucial: Check if the requesting user owns the entry
+    if securitiy.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
+    
     if request.method == "DELETE":
         securitiy.delete()
         return JsonResponse({'success': True})
@@ -213,7 +224,10 @@ def api_entry_add(request):
 @require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
 def api_entry_update(request, id):
     entry = get_object_or_404(TradeEntry, id=id)
-
+    # Crucial: Check if the requesting user owns the entry
+    if entry.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
+    
     if request.method in ["PUT", "PATCH"]:
         try:
             data = json.loads(request.body)
@@ -280,6 +294,10 @@ def api_exit_add(request):
 def api_exit_update(request, id):
     exit = get_object_or_404(TradeExit, id=id)
 
+    # Crucial: Check if the requesting user owns the entry
+    if exit.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
+    
     if request.method in ["PUT", "PATCH"]:
         try:
             data = json.loads(request.body)
