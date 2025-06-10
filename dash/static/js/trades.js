@@ -41,6 +41,27 @@ document.querySelectorAll('.btn-delete-entry').forEach(button => {
     });
 });
 
+document.querySelectorAll('.btn-edit_entry').forEach(button => {
+    button.addEventListener('click', function (e) {
+        const id = e.target.dataset.id;
+        fetch(`/entry/edit/${id}/`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load form');
+                return res.text();
+            })
+            .then(html => {
+                document.getElementById('modal-container').innerHTML = html;
+                const modalEl = document.getElementById('addEntryModal');
+                new bootstrap.Modal(modalEl).show();
+                recalcEntryAmounts();
+            })
+            .catch(err => {
+                showError('Could not load entry form.');
+                console.error(err);
+            });
+    });
+});
+
 document.addEventListener('submit', function (e) {
     if (e.target && e.target.id === 'entry-form') {
         e.preventDefault();
@@ -140,6 +161,27 @@ document.querySelectorAll('.btn-delete-exit').forEach(button => {
     });
 });
 
+document.querySelectorAll('.btn-edit_exit').forEach(button => {
+    button.addEventListener('click', function (e) {
+        const id = e.target.dataset.id;
+        fetch(`/exit/edit/${id}/`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load form');
+                return res.text();
+            })
+            .then(html => {
+                document.getElementById('modal-container').innerHTML = html;
+                const modalEl = document.getElementById('addExitModal');
+                new bootstrap.Modal(modalEl).show();
+                recalcExitAmounts();
+            })
+            .catch(err => {
+                showError('Could not load entry form.');
+                console.error(err);
+            });
+    });
+});
+
 document.addEventListener('submit', function (e) {
     if (e.target && e.target.id === 'exit-form') {
         e.preventDefault();
@@ -176,7 +218,7 @@ document.addEventListener('submit', function (e) {
                 location.reload();
             })
             .catch(data => {
-                
+
                 form.querySelectorAll('.field-error').forEach(el => el.remove());
 
                 if (data.errors) {
@@ -196,63 +238,76 @@ document.addEventListener('submit', function (e) {
     }
 });
 
+
+function recalcEntryAmounts() {
+    const modal = document.getElementById('addEntryModal');
+    if (!modal) return;
+
+    const quantityInput = modal.querySelector('#id_entry_quantity');
+    const priceInput = modal.querySelector('#id_entry_price');
+    const feeInput = modal.querySelector('#id_entry_fee');
+    const taxInput = modal.querySelector('#id_entry_tax');
+    const grossAmountInput = modal.querySelector('#id_entry_gross_amount');
+    const netAmountInput = modal.querySelector('#id_entry_net_amount');
+
+    if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
+
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const fee = parseFloat(feeInput.value) || 0;
+    const tax = parseFloat(taxInput.value) || 0;
+
+    const gross = quantity * price;
+    const net = gross + fee + tax;
+
+    grossAmountInput.value = gross.toFixed(2);
+    netAmountInput.value = net.toFixed(2);
+}
+
+
+
 document.addEventListener('input', function (e) {
     if (
         e.target &&
         ['id_entry_quantity', 'id_entry_price', 'id_entry_fee', 'id_entry_tax'].includes(e.target.id)
     ) {
-        const modal = document.getElementById('addEntryModal');
-        if (!modal) return;
-
-        const quantityInput = modal.querySelector('#id_entry_quantity');
-        const priceInput = modal.querySelector('#id_entry_price');
-        const feeInput = modal.querySelector('#id_entry_fee');
-        const taxInput = modal.querySelector('#id_entry_tax');
-        const grossAmountInput = modal.querySelector('#id_entry_gross_amount');
-        const netAmountInput = modal.querySelector('#id_entry_net_amount');
-
-        if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
-
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        const fee = parseFloat(feeInput.value) || 0;
-        const tax = parseFloat(taxInput.value) || 0;
-
-        const gross = quantity * price;
-        const net = gross - fee - tax;
-
-        grossAmountInput.value = gross.toFixed(2);
-        netAmountInput.value = net.toFixed(2);
+        recalcEntryAmounts();
     }
 });
 
+
+
+function recalcExitAmounts() {
+    const modal = document.getElementById('addExitModal');
+    if (!modal) return;
+
+    const quantityInput = modal.querySelector('#id_exit_quantity');
+    const priceInput = modal.querySelector('#id_exit_price');
+    const feeInput = modal.querySelector('#id_exit_fee');
+    const taxInput = modal.querySelector('#id_exit_tax');
+    const grossAmountInput = modal.querySelector('#id_exit_gross_amount');
+    const netAmountInput = modal.querySelector('#id_exit_net_amount');
+
+    if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
+
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const fee = parseFloat(feeInput.value) || 0;
+    const tax = parseFloat(taxInput.value) || 0;
+
+    const gross = quantity * price;
+    const net = gross - fee - tax;
+
+    grossAmountInput.value = gross.toFixed(2);
+    netAmountInput.value = net.toFixed(2);
+
+}
 document.addEventListener('input', function (e) {
     if (
         e.target &&
         ['id_exit_quantity', 'id_exit_price', 'id_exit_fee', 'id_exit_tax'].includes(e.target.id)
     ) {
-        const modal = document.getElementById('addExitModal');
-        if (!modal) return;
-
-        const quantityInput = modal.querySelector('#id_exit_quantity');
-        const priceInput = modal.querySelector('#id_exit_price');
-        const feeInput = modal.querySelector('#id_exit_fee');
-        const taxInput = modal.querySelector('#id_exit_tax');
-        const grossAmountInput = modal.querySelector('#id_exit_gross_amount');
-        const netAmountInput = modal.querySelector('#id_exit_net_amount');
-
-        if (!quantityInput || !priceInput || !feeInput || !taxInput || !grossAmountInput || !netAmountInput) return;
-
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        const fee = parseFloat(feeInput.value) || 0;
-        const tax = parseFloat(taxInput.value) || 0;
-
-        const gross = quantity * price;
-        const net = gross - fee - tax;
-
-        grossAmountInput.value = gross.toFixed(2);
-        netAmountInput.value = net.toFixed(2);
+        recalcExitAmounts();
     }
 });
 

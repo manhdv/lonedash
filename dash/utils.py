@@ -5,6 +5,7 @@ from collections import defaultdict
 import requests
 
 from django.utils import timezone
+from django.db.models import Max
 
 from dash.models import Security, SecurityPrice, Setting
 from .models import (
@@ -13,7 +14,8 @@ from .models import (
     TradeEntry,
     TradeExit,
     SecurityPrice,
-    Transaction
+    Transaction,
+    Account
 )
 
 
@@ -62,24 +64,20 @@ def utils_update_account(account, start_date=None):
     daily_principal = defaultdict(Decimal)
 
     for tx in transactions:
-        daily_changes[tx.date] += tx.net_amount()
+        daily_changes[tx.date] += tx.net_amount
         daily_fee[tx.date] += tx.fee
         daily_tax[tx.date] += tx.tax
         if tx.type in ("deposit", "withdrawal"):
-            daily_principal[tx.date] += tx.net_amount()
+            daily_principal[tx.date] += tx.net_amount
 
     for entry in entries:
-        net = entry.quantity * entry.price + entry.fee + entry.tax
-        print(net)
-        daily_changes[entry.date] -= net
+        daily_changes[entry.date] -= entry.net_amount
         daily_fee[entry.date] += entry.fee
         daily_tax[entry.date] += entry.tax
 
 
     for ex in exits:
-        gross = ex.quantity * ex.price
-        net = gross - ex.fee - ex.tax
-        daily_changes[ex.date] += net
+        daily_changes[ex.date] += ex.net_amount
         daily_fee[ex.date] += ex.fee
         daily_tax[ex.date] += ex.tax
 
@@ -370,6 +368,19 @@ def utils_fx_to_usd(currency: str, as_of: date) -> Decimal:
 
 def utils_recalc_portfolio(user, day):
     """Aggregate all account balances for `user` on `day` → USD totals."""
+
+        # Kiểm tra nếu balance của mỗi account chưa được update đến ngày `day`, thì gọi update
+    accounts = Account.objects.filter(user=user)
+    for account in accounts:
+        latest_balance = (
+            AccountBalance.objects
+            .filter(account=account)
+            .aggregate(latest=Max('date'))['latest']
+        )
+        if latest_balance is None or latest_balance < day:
+            utils_update_account(account)
+
+
     qs = (
         AccountBalance.objects
         .select_related('account')
@@ -397,7 +408,7 @@ def utils_recalc_portfolio(user, day):
     total_tx = Decimal('0')
     for tx in txs:
         fx = utils_fx_to_usd(tx.account.currency.code, tx.date)
-        total_tx += tx.net_amount() * fx
+        total_tx += tx.net_amount * fx
 
     totals['transaction'] = total_tx
 

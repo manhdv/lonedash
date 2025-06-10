@@ -160,10 +160,24 @@ def entry_create_form(request):
         'entry_form': form,
     })
 
+def entry_edit_form(request, id):
+    entry = get_object_or_404(TradeEntry, id=id)
+    form = EntryForm(instance=entry)
+    return render(request, 'modals/entry_modal.html', {
+        'entry_form': form
+    })
+
 def exit_create_form(request):
     form = ExitForm(user=request.user)
     return render(request, 'modals/exit_modal.html', {
         'exit_form': form,
+    })
+
+def exit_edit_form(request, id):
+    exit = get_object_or_404(TradeExit, id=id)
+    form = ExitForm(instance=exit)
+    return render(request, 'modals/exit_modal.html', {
+        'exit_form': form
     })
 
 def settings_view(request):

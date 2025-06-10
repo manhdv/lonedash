@@ -165,6 +165,7 @@ class Transaction(models.Model):
     class Meta:
         ordering = ['-date']
 
+    @property
     def net_amount(self):
         money_in = ['deposit', 'transfer_in', 'dividien', 'interest']
         money_out = ['withdrawal', 'transfer_out', 'fee']
@@ -204,7 +205,7 @@ class TradeEntry(models.Model):
 
     @property
     def net_amount(self):
-        return self.gross_amount - self.fee - self.tax
+        return self.gross_amount + self.fee + self.tax
     
     def filled_quantity(self, until_date=None):
         qs = self.exits.all()

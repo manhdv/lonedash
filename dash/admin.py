@@ -35,7 +35,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
 @admin.register(AccountBalance)
 class AccountBalanceAdmin(admin.ModelAdmin):
-    list_display = ('account', 'date', 'balance', 'equity', 'float')
+    list_display = ('account', 'date', 'balance', 'equity', 'float', 'principal')
     list_filter = ('account', 'date')
     search_fields = ('account__name',)
     ordering = ('-date',)

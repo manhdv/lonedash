@@ -13,8 +13,9 @@ from .views import (
     transaction_edit_form,
     security_search_form,
     entry_create_form,
-    exit_create_form
-    
+    entry_edit_form,
+    exit_create_form,
+    exit_edit_form
 )
 
 from .apis import (
@@ -58,7 +59,10 @@ urlpatterns += [
 
     path('security/search/', security_search_form, name='security_search_form'),
     path('entry/create/', entry_create_form, name='entry_create_form'),
+    path('entry/edit/<int:id>/', entry_edit_form, name='entry_edit_form'),
+
     path('exit/create/', exit_create_form, name='exit_create_form'),
+    path('exit/edit/<int:id>/', exit_edit_form, name='exit_edit_form'),
 ]
 
 #Apis

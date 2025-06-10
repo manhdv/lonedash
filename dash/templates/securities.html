@@ -33,7 +33,7 @@
                     <td>{{ security.id }}</td>
                     <td>{{ security.code }}</td>
                     <td>{{ security.exchange }}</td>
-                    <td>{{ security.name}}</td>
+                    <td><div title="{{ security.name }}" class="truncate-col">{{ security.name }}</div></td>
                     <td>{{ security.type}}</td>
                     <td>{{ security.last_close|floatformat:2 }}</td>
                     <td>{{ security.last_close_date  }}</td>

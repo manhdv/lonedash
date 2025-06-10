@@ -31,7 +31,7 @@
                 {% for entry in entries %}
                 <tr>
                     <td>{{ entry.id }}</td>
-                    <td>{{ entry.security }}</td>
+                    <td><div title="{{ entry.security }}" class="truncate-col">{{ entry.security }}</div></td>
                     <td>{{ entry.account }}</td>
                     <td>{{ entry.quantity}}</td>
                     <td>{{ entry.remaining_quantity|floatformat:"4"}}</td>
@@ -40,6 +40,7 @@
                     <td>{{ entry.tax }}</td>
                     <td>{{ entry.date}}</td>
                     <td>
+                        <button class="btn btn-sm btn-link btn-edit_entry" data-id="{{ entry.id }}">Edit</button>
                         <button class="btn btn-sm btn-link text-danger btn-delete-entry"
                             data-id="{{ entry.id }}">Delete</button>
                     </td>
@@ -102,7 +103,7 @@
                 {% for exit in exits %}
                 <tr>
                     <td>{{ exit.id }}</td>
-                    <td>{{ exit.entry.security }}</td>
+                    <td><div title="{{ exit.entry.security }}" class="truncate-col">{{ exit.entry.security }}</div></td>
                     <td>{{ exit.entry.account }}</td>
                     <td>{{ exit.quantity}}</td>
                     <td>{{ exit.price}}</td>
@@ -110,6 +111,7 @@
                     <td>{{ exit.tax }}</td>
                     <td>{{ exit.date}}</td>
                     <td>
+                        <button class="btn btn-sm btn-link btn-edit_exit" data-id="{{ exit.id }}">Edit</button>
                         <button class="btn btn-sm btn-link text-danger btn-delete-exit"
                             data-id="{{ exit.id }}">Delete</button>
                     </td>
