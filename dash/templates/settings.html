@@ -7,14 +7,13 @@
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h2 class="mb-0">Settings</h2>
-
+        
     </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="mb-0">APIS</h4>
+    </div>    
     <form method="post">
         {% csrf_token %}
-        <div class="mb-3">
-            <label class="form-label">API Key Yahoo</label>
-            <input type="text" name="key_yahoo" class="form-control" value="{{ key_yahoo }}">
-        </div>
         <div class="mb-3">
             <label class="form-label">API Key EODHD</label>
             <input type="text" name="key_eodhd" class="form-control" value="{{ key_eodhd }}">

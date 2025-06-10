@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from collections import defaultdict
+from functools import reduce
+from operator import mul
 
 import requests
 
@@ -418,21 +420,92 @@ def utils_recalc_portfolio(user, day):
         defaults=totals,
     )
 
+def utils_calculate_drawdown(entries):  # entries: list of PortfolioPerformance ordered by date
+    peak = Decimal('1.0')
+    nav = Decimal('1.0')
+    max_drawdown = Decimal('0.0')
 
-def utils_calculate_max_drawdown(data):
-    max_nav = Decimal('0')
-    max_dd = Decimal('0')
+    for i in range(1, len(entries)):
+        prev = entries[i - 1]
+        curr = entries[i]
 
-    for p in data:
-        if p.principal > 0:
-            nav = p.equity / p.principal
+        if prev.equity == 0 or curr.equity == 0:
+            continue
+
+        if curr.transaction == 0:
+            daily_return = curr.equity / prev.equity
+            nav *= daily_return
+            peak = max(peak, nav)
+            dd = (nav - peak) / peak
+            max_drawdown = min(max_drawdown, dd)
+
         else:
-            nav = Decimal('1')  # hoặc continue nếu muốn bỏ qua ngày không đầu tư
+            # Skip or reset nav to current if you want
+            nav = nav  # or nav = nav (keep) or nav = 1 (reset)
+            peak = max(peak, nav)
 
-        if nav > max_nav:
-            max_nav = nav
-        dd = (max_nav - nav) / max_nav if max_nav > 0 else 0
-        if dd > max_dd:
-            max_dd = dd
+    return float(max_drawdown * 100)
 
-    return round(max_dd * 100, 2)
+
+from decimal import Decimal
+from functools import reduce
+from operator import mul
+
+def utils_calculate_twrr(entries):
+    """
+    entries: list of PortfolioPerformance, sorted by date ascending
+    """
+    if not entries:
+        print("No entries.")
+        return Decimal(0)
+
+    twrr_factors = []
+    start_equity = None
+
+    for i, entry in enumerate(entries):
+        equity = entry.equity
+        tx = entry.transaction
+
+        print(f"[{entry.date}] Equity: {equity}, Tx: {tx}")
+
+        if start_equity is None:
+            start_equity = equity
+            print(f"  Start equity initialized to {start_equity}")
+            continue
+
+        if tx != 0:
+            if start_equity == 0:
+                r = 0
+                print(f"  Division by zero avoided (start_equity == 0), r = 0")
+            else:
+                r = (equity - start_equity - tx) / start_equity
+                print(f"  Tx detected → r = ({equity} - {start_equity} - {tx}) / {start_equity} = {r}")
+            twrr_factors.append(Decimal(1) + Decimal(r))
+            print(f"  Added factor: {Decimal(1) + Decimal(r)}")
+            start_equity = equity
+            print(f"  Reset start equity to {start_equity}")
+
+    # Handle final period (no tx at end but still value change)
+    entries = list(entries)
+    last_equity = entries[-1].equity
+    if start_equity != last_equity:
+        if start_equity == 0:
+            r = 0
+            print(f"[FINAL] Avoided division by zero")
+        else:
+            r = (last_equity - start_equity) / start_equity
+            print(f"[FINAL] r = ({last_equity} - {start_equity}) / {start_equity} = {r}")
+        twrr_factors.append(Decimal(1) + Decimal(r))
+        print(f"[FINAL] Added last factor: {Decimal(1) + Decimal(r)}")
+
+    if not twrr_factors:
+        print("No factors to multiply.")
+        return Decimal(0)
+
+    product = reduce(mul, twrr_factors, Decimal(1))
+    twrr = (product - Decimal(1)) * 100
+    print(f"TWRR factors: {twrr_factors}")
+    print(f"TWRR product: {product}")
+    print(f"TWRR result: {twrr}")
+
+    return twrr

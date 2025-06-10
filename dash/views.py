@@ -13,7 +13,7 @@ from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 from django.db.models import Prefetch
 from django.db.models import OuterRef, Subquery
 
-from .utils import utils_calculate_max_drawdown
+from .utils import utils_calculate_drawdown, utils_calculate_twrr
 
 # Create your views here.
 def get_icons_svg():
@@ -27,11 +27,13 @@ def dash_view(request):
     data = PortfolioPerformance.objects.filter(user=request.user).order_by('date')
 
     portfolio = data.last()
-    max_dd = utils_calculate_max_drawdown(data)
+    max_dd = utils_calculate_drawdown(data)
+    twrr = utils_calculate_twrr(data)
     return render(request, 'dash.html', {
         'icons_svg': get_icons_svg(),
         'portfolio': portfolio,
-        'max_dd' : max_dd
+        'max_dd' : max_dd,
+        'twrr': twrr
     })
 
 def accounts_view(request):
