@@ -78,8 +78,11 @@ class ExitForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+        open_entries = kwargs.pop('open_entries', None)
         super().__init__(*args, **kwargs)
+
+        if open_entries is not None:
+            self.fields['entry'].queryset = open_entries
 
         for name, field in self.fields.items():
             field.widget.attrs['id'] = f'id_exit_{name}'

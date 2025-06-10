@@ -15,6 +15,9 @@ from django.db.models import OuterRef, Subquery
 
 from .utils import utils_calculate_drawdown, utils_calculate_twrr
 
+
+from django.db.models import Sum, F, Q
+
 # Create your views here.
 def get_icons_svg():
     current_dir = os.path.dirname(__file__)
@@ -179,7 +182,13 @@ def entry_edit_form(request, id):
     })
 
 def exit_create_form(request):
-    form = ExitForm(user=request.user)
+
+    open_entries = TradeEntry.objects.annotate(
+        filled=Sum('exits__quantity')
+    ).filter(
+        Q(filled__lt=F('quantity')) | Q(filled__isnull=True)
+    )
+    form = ExitForm(open_entries=open_entries)
     return render(request, 'modals/exit_modal.html', {
         'exit_form': form,
     })
