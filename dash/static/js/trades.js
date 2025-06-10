@@ -22,7 +22,11 @@ document.querySelectorAll('.btn-delete-entry').forEach(button => {
     button.addEventListener('click', function () {
         const id = this.dataset.id;
 
-        if (confirm('Are you sure you want to delete this entry?')) {
+        showConfirm({
+            title: 'Delete entry',
+            body: 'Do you really want to delete this entry?',
+            onConfirm: () => {
+
             fetch(`/api/entry/${id}/`, {
                 method: 'DELETE',
                 headers: {
@@ -37,7 +41,11 @@ document.querySelectorAll('.btn-delete-entry').forEach(button => {
                     }
                 })
                 .catch(() => showError('Request failed.'));
-        }
+
+
+                }
+        })
+
     });
 });
 
@@ -142,7 +150,11 @@ document.querySelectorAll('.btn-delete-exit').forEach(button => {
     button.addEventListener('click', function () {
         const id = this.dataset.id;
 
-        if (confirm('Are you sure you want to delete this exit?')) {
+        showConfirm({
+            title: 'Delete exit',
+            body: 'Do you really want to delete this exit?',
+            onConfirm: () => {
+
             fetch(`/api/exit/${id}/`, {
                 method: 'DELETE',
                 headers: {
@@ -157,7 +169,10 @@ document.querySelectorAll('.btn-delete-exit').forEach(button => {
                     }
                 })
                 .catch(() => showError('Request failed.'));
-        }
+
+
+                }
+        })
     });
 });
 

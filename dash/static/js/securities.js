@@ -3,22 +3,28 @@ document.querySelectorAll('.btn-delete-security').forEach(button => {
     button.addEventListener('click', function () {
         const id = this.dataset.id;
 
-        if (confirm('Are you sure you want to delete this security?')) {
-            fetch(`/api/security/${id}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-                .then(res => {
-                    if (res.ok) {
-                        location.reload(); // hoặc bạn có thể remove row DOM nếu thích
-                    } else {
-                        showError('Failed to delete transaction.');
+
+        showConfirm({
+            title: 'Delete security',
+            body: 'Do you really want to delete this security?',
+            onConfirm: () => {
+
+                fetch(`/api/security/${id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
                     }
                 })
-                .catch(() => showError('Request failed.'));
-        }
+                    .then(res => {
+                        if (res.ok) {
+                            location.reload(); // hoặc bạn có thể remove row DOM nếu thích
+                        } else {
+                            showError('Failed to delete transaction.');
+                        }
+                    })
+                    .catch(() => showError('Request failed.'));
+            }
+        })
     });
 });
 
@@ -67,13 +73,13 @@ document.addEventListener('click', function (e) {
             },
             body: JSON.stringify(data),
         })
-        .then(res => res.json())
-        .then(res => {
-            alert(res.status === 'ok' ? 'Added!' : 'Already exists.');
-        })
-        .catch(() => {
-            showError('Error adding security');
-        });
+            .then(res => res.json())
+            .then(res => {
+                alert(res.status === 'ok' ? 'Added!' : 'Already exists.');
+            })
+            .catch(() => {
+                showError('Error adding security');
+            });
     } else if (e.target.id === 'close-search-btn') {
         location.reload();
     }

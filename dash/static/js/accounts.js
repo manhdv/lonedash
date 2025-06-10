@@ -4,22 +4,28 @@ document.querySelectorAll('.btn-delete-transaction').forEach(button => {
     button.addEventListener('click', function () {
         const txId = this.dataset.id;
 
-        if (confirm('Are you sure you want to delete this transaction?')) {
-            fetch(`/api/transaction/${txId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-                .then(res => {
-                    if (res.ok) {
-                        location.reload(); // hoặc remove row khỏi DOM nếu muốn fancy
-                    } else {
-                        showError('Failed to delete transaction.');
+
+        showConfirm({
+            title: 'Delete transaction',
+            body: 'Do you really want to delete this transaction?',
+            onConfirm: () => {
+                fetch(`/api/transaction/${txId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
                     }
                 })
-                .catch(() => showError('Request failed.'));
-        }
+                    .then(res => {
+                        if (res.ok) {
+                            location.reload(); // hoặc remove row khỏi DOM nếu muốn fancy
+                        } else {
+                            showError('Failed to delete transaction.');
+                        }
+                    })
+                    .catch(() => showError('Request failed.'));
+                }
+        })
+
     });
 });
 
@@ -95,7 +101,7 @@ document.addEventListener('submit', function (e) {
                 location.reload();
             })
             .catch(data => {
-                
+
                 form.querySelectorAll('.field-error').forEach(el => el.remove());
                 if (data.errors) {
                     Object.keys(data.errors).forEach(field => {
@@ -124,23 +130,27 @@ document.addEventListener('click', (e) => {
     if (e.target.classList.contains('btn-delete_account')) {
         const accId = e.target.dataset.id;
 
-        if (confirm('Are you sure you want to delete this account?')) {
-            fetch(`/api/account/${accId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(res => {
-                if (res.ok) {
-                    location.reload();
-                } else {
-                    return res.json().then(data => {
-                        showError(data.error || 'Failed to delete account.');
-                    });
-                }
-            })
-        }
+        showConfirm({
+            title: 'Delete account',
+            body: 'Do you really want to delete this account?',
+            onConfirm: () => {
+                fetch(`/api/account/${accId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        location.reload();
+                    } else {
+                        return res.json().then(data => {
+                            showError(data.error || 'Failed to delete account.');
+                        });
+                    }
+                })
+            }
+        })
     }
 });
 document.getElementById('btn-add-account').addEventListener('click', () => {
