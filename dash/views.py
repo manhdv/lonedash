@@ -33,7 +33,8 @@ def dash_view(request):
         'icons_svg': get_icons_svg(),
         'portfolio': portfolio,
         'max_dd' : max_dd,
-        'twrr': twrr
+        'twrr': twrr,
+        'active_page': "dashboard"
     })
 
 def accounts_view(request):
@@ -64,6 +65,7 @@ def accounts_view(request):
         'accounts': accounts_page,
         'transactions' : transactions_page,
         'icons_svg': svg_content,
+        'active_page': "accounts"
     })
 
 def login_view(request):
@@ -141,6 +143,7 @@ def securities_view(request):
     return render(request, "securities.html", {
         'icons_svg': svg_content,
         'securities': securities_page,
+        'active_page': "securities"
     })
 
 
@@ -154,7 +157,12 @@ def trades_view(request):
     exits_page = exits_paginator.get_page(request.GET.get('exits_page'))
 
     svg_content = get_icons_svg()
-    return render(request, "trades.html", {'icons_svg': svg_content, 'entries' : entries_page, 'exits' : exits_page})
+    return render(request, "trades.html", {
+        'icons_svg': svg_content, 
+        'entries' : entries_page, 
+        'exits' : exits_page,
+        'active_page': "trades"
+        })
 
 def entry_create_form(request):
     form = EntryForm()
