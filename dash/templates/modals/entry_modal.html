@@ -1,7 +1,7 @@
 <div class="modal fade" id="addEntryModal" tabindex="-1" aria-labelledby="addEntryLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="entry-form" method="post" action="{% url 'api_entry_add' %}">
+      <form id="entry-form" method="post" action="{% if entry %}{% url 'api_entry_update' entry.id %}{% else %}{% url 'api_entry_add' %}{% endif %}">
         <div class="modal-header">
           <h5 class="modal-title" id="addentryLabel">New trade</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

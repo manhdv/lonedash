@@ -164,6 +164,7 @@ def entry_edit_form(request, id):
     entry = get_object_or_404(TradeEntry, id=id)
     form = EntryForm(instance=entry)
     return render(request, 'modals/entry_modal.html', {
+        'entry': entry,
         'entry_form': form
     })
 
@@ -177,6 +178,7 @@ def exit_edit_form(request, id):
     exit = get_object_or_404(TradeExit, id=id)
     form = ExitForm(instance=exit)
     return render(request, 'modals/exit_modal.html', {
+        'exit': exit,
         'exit_form': form
     })
 

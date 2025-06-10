@@ -112,7 +112,7 @@ document.addEventListener('submit', function (e) {
                         }
                     }
                 } else {
-                    alert('Error updating trade');
+                    alert('Error updating entry');
                 }
             });
     }
