@@ -1,0 +1,35 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+*.sqlite3
+*.db
+
+# Static/media files (nếu bạn không muốn copy vào image)
+staticfiles/
+media/
+
+# OS / IDE / Editor crap
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Git
+.git
+.gitignore
+
+# Docker/compose config
+.dockerignore
+docker-compose.yml
