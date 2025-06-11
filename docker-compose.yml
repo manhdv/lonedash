@@ -1,6 +1,6 @@
 
 services:
-  lonedash-db:
+  db:
     image: postgres:16
     environment:
       POSTGRES_DB: lonedash
@@ -9,7 +9,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  lonedash-web:
+  web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
