@@ -285,7 +285,7 @@ def api_exit_add(request):
     if form.is_valid():
         exit = form.save(commit=False)
         # Crucial: Check if the requesting user owns the entry
-        if exit.entry.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+        if exit.entry.account.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
             return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
 
         exit.save()
@@ -302,7 +302,7 @@ def api_exit_update(request, id):
     exit = get_object_or_404(TradeExit, id=id)
 
     # Crucial: Check if the requesting user owns the entry
-    if exit.entry.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
+    if exit.entry.account.user != request.user: # Assuming TradeEntry has a 'user' ForeignKey
         return JsonResponse({'success': False, 'errors': 'Not authorized'}, status=403) # Forbidden
     
     if request.method in ["PUT", "PATCH"]:
