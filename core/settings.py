@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,13 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-us#gu8l#l1q(62peemx=(qfsp-t6&^8jp1by2(r8f$6@wyw5d0'
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-us#gu8l#l1q(62peemx=(qfsp-t6&^8jp1by2(r8f$6@wyw5d0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+host = os.getenv("HOST", "http://localhost")
+parsed = urlparse(host)
 
+ALLOWED_HOSTS = [parsed.hostname] if parsed.hostname else []
+CSRF_TRUSTED_ORIGINS = [f"{parsed.scheme}://{parsed.hostname}"] if parsed.hostname else []
 
 # Application definition
 
