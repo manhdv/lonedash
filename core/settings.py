@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / '.env')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
