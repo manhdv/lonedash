@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-us#gu8l#l1q(62peemx=(qfsp-t6&^8jp1by2(r8f$6@wyw5d0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 host = os.getenv("HOST", "http://localhost")
 parsed = urlparse(host)
