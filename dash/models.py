@@ -291,7 +291,7 @@ class TradeExit(models.Model):
 class Security(models.Model):
 #    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security')
-    code = models.CharField(max_length=10)
+    code = models.CharField(max_length=20)
     exchange = models.CharField(max_length=20)
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, blank=True)  
