@@ -162,11 +162,11 @@ document.addEventListener('keydown', function (e) {
                 }
 
                 if (!yahoo.length && !eodhd.length) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No results found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">No results found</td></tr>';
                 }
             })
             .catch(() => {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data</td></tr>';
             });
     }
 });

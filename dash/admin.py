@@ -51,10 +51,10 @@ class AccountBalanceAdmin(admin.ModelAdmin):
 
 @admin.register(Security)
 class SecurityAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'exchange', 'user', 'date')
+    list_display = ('code', 'name', 'exchange', 'user')
     search_fields = ('code', 'name', 'exchange')
     list_filter = ('exchange', 'api_source')
-    ordering = ('-date',)
+    ordering = ('-code',)
 
 @admin.register(SecurityPrice)
 class SecurityPriceAdmin(admin.ModelAdmin):

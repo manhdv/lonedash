@@ -18,7 +18,8 @@ from .models import (
     SecurityPrice,
     Transaction,
     Account,
-    UserAPIKey, 
+    UserAPIKey,
+    UserPreference,
 )
 
 
@@ -321,20 +322,27 @@ def utils_update_security_prices_for_user(user):
 
 # ---- helper -------------------------------------------------------------
 
+def utils_format_currency_pair(source: str, target: str) -> str:
+    if source.upper() == "USD":
+        return f"{target.upper()}=X"
+    return f"{source.upper()}{target.upper()}=X"
 
+def utils_convert_currency(source: str, target: str, as_of: date) -> Decimal:
+    source = source.upper()
+    target = target.upper()
 
-
-def utils_fx_to_usd(currency: str, as_of: date) -> Decimal:
-    # USD thì khỏi tra cứu
-    if currency.upper() == "USD":
+    if source == target:
         return Decimal("1")
 
-    symbol = f"{currency.upper()}=X"
+    symbol = utils_format_currency_pair(source, target)
+
+    print(f"Debug Sumbol = {symbol}")
+
     if not Security.objects.filter(code=symbol).exists():
-        # Không có mã FX này → coi như 1:1
-        return Decimal("1")
+        print(f"Debug Sumbol not exits")
+        return Decimal("1")  # fallback nếu không có mã FX
 
-    # 1) Tìm giá gần nhất về quá khứ (<= as_of)
+    # 1) Tìm giá gần nhất quá khứ
     quote = (
         SecurityPrice.objects
         .filter(
@@ -346,8 +354,8 @@ def utils_fx_to_usd(currency: str, as_of: date) -> Decimal:
         .first()
     )
 
-    if quote is None:
-        # 2) Không có quá khứ → lấy giá sớm nhất sau as_of
+    if not quote:
+        # 2) Không có quá khứ, tìm sớm nhất sau as_of
         quote = (
             SecurityPrice.objects
             .filter(
@@ -359,19 +367,26 @@ def utils_fx_to_usd(currency: str, as_of: date) -> Decimal:
             .first()
         )
 
-    if quote is None:
-        # 3) Bó tay, fallback 1:1
-        return Decimal("1")
+    if not quote:
+        print(f"Not in quote")
+        return Decimal("1")  # fallback nếu không có dữ liệu luôn
+    
 
-    # USD per 1 unit currency
-    return Decimal("1") / quote.close
+    print(f"Find quote {quote.close}")
+    return Decimal(quote.close)
 
 
 
 def utils_recalc_portfolio(user, day):
     """Aggregate all account balances for `user` on `day` → USD totals."""
-
-        # Kiểm tra nếu balance của mỗi account chưa được update đến ngày `day`, thì gọi update
+    try:
+        target_currency = UserPreference.objects.get(user=user).currency.code
+    except UserPreference.DoesNotExist:
+        # fallback nếu user chưa có thiết lập
+        target_currency = "USD"
+    print(f"[INFO] target currency {target_currency}") 
+    
+    # Kiểm tra nếu balance của mỗi account chưa được update đến ngày `day`, thì gọi update
     accounts = Account.objects.filter(user=user)
     for account in accounts:
         latest_balance = (
@@ -398,7 +413,9 @@ def utils_recalc_portfolio(user, day):
     }
 
     for bal in qs:
-        fx = utils_fx_to_usd(bal.account.currency.code, bal.date)
+        print(f"[INFO] Account Balance currency {bal.account.currency.code}")
+        fx = utils_convert_currency(bal.account.currency.code, target_currency, bal.date)
+        print (f"convert fx = {fx}")
         totals['principal'] += (bal.principal or 0) * fx
         totals['balance']   += (bal.balance   or 0) * fx
         totals['float']     += (bal.float     or 0) * fx
@@ -409,7 +426,7 @@ def utils_recalc_portfolio(user, day):
     txs = Transaction.objects.filter(account__user=user, date=day)
     total_tx = Decimal('0')
     for tx in txs:
-        fx = utils_fx_to_usd(tx.account.currency.code, tx.date)
+        fx = utils_convert_currency(tx.account.currency.code, target_currency, tx.date)
         total_tx += tx.net_amount * fx
 
     totals['transaction'] = total_tx
@@ -419,6 +436,15 @@ def utils_recalc_portfolio(user, day):
         date=day,
         defaults=totals,
     )
+
+
+def utils_recalc_from(user, start_date):
+    today = timezone.now().date()
+    current = start_date
+    while current <= today:
+        print(f"↻ Recalculating portfolio for {user.username} on {current}")
+        utils_recalc_portfolio(user, current)
+        current += timedelta(days=1)
 
 def utils_calculate_drawdown(entries):  # entries: list of PortfolioPerformance ordered by date
     peak = Decimal('1.0')

@@ -3,7 +3,7 @@
 import os
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from dash.models import Country, Currency, Language
+from dash.models import Country, Currency, Language, UserPreference
 
 User = get_user_model()
 
@@ -104,13 +104,34 @@ class Command(BaseCommand):
         ])
         self.stdout.write("✔ Countries added.")
 
+    def fill_userpref_for_user(self, user):
+        if UserPreference.objects.filter(user=user).exists():
+            self.stdout.write(f"UserPreference already exists for '{user.username}'.")
+            return
+
+        language, _ = Language.objects.get_or_create(code='en', defaults={'name': 'English'})
+        currency, _ = Currency.objects.get_or_create(code='USD', defaults={'name': 'US Dollar', 'symbol': '$'})
+
+        UserPreference.objects.create(
+            user=user,
+            language=language,
+            currency=currency,
+            theme='light'
+        )
+        self.stdout.write(f"✔ UserPreference created for '{user.username}'.")
+
+
     def create_superuser(self):
         username = os.getenv("SUPERUSER_NAME", "admin")
         email = os.getenv("SUPERUSER_EMAIL", "admin@example.com")
         password = os.getenv("SUPERUSER_PASSWORD", "admin")
 
         if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(username=username, email=email, password=password)
+            user = User.objects.create_superuser(username=username, email=email, password=password)
             self.stdout.write(f"✔ Superuser '{username}' created.")
         else:
+            user = User.objects.get(username=username)
             self.stdout.write(f"Superuser '{username}' already exists.")
+
+        # Gọi fill_userpref cho user này
+        self.fill_userpref_for_user(user)

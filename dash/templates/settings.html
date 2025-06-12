@@ -7,7 +7,7 @@
         <h2 class="mb-0">Settings</h2>
     </div>
 
-    <form method="post">
+    <form method="post" action="{% url 'settings' %}">
         {% csrf_token %}
 
         <!-- API Keys -->

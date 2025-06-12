@@ -97,11 +97,11 @@ class Account(models.Model):
 class AccountBalance(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='balances')
     date = models.DateField(default=date.today)
-    principal = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    float = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    principal = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    balance = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    float = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
 
     class Meta:
         unique_together = ('account', 'date')  # 1 balance / day
@@ -127,13 +127,13 @@ class AccountBalance(models.Model):
 class PortfolioPerformance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='portfolio')
     date = models.DateField(default=date.today)
-    principal = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    float = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    principal = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    balance = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    float = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
 
-    transaction =  models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    transaction =  models.DecimalField(max_digits=16, decimal_places=6, default=0)
 
     class Meta:
         unique_together = ('user', 'date')  # 1 balance / day
@@ -167,9 +167,9 @@ class Transaction(models.Model):
         ('interest', 'Interest'),
         ('fee', 'Fee')
     ])
-    amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
     currency = models.CharField(max_length=50, default='USD')
     date = models.DateField(default=date.today)
     description = models.TextField(blank=True)
@@ -197,9 +197,9 @@ class TradeEntry(models.Model):
     security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='entries')
 
     quantity = models.DecimalField(max_digits=16, decimal_places=4)
-    price = models.DecimalField(max_digits=16, decimal_places=2)
-    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    price = models.DecimalField(max_digits=16, decimal_places=6)
+    fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
 
     date = models.DateField(default=date.today)
     note = models.TextField(blank=True)
@@ -247,10 +247,10 @@ class TradeEntry(models.Model):
 class TradeExit(models.Model):
     entry = models.ForeignKey(TradeEntry, on_delete=models.CASCADE, related_name='exits')
 
-    price = models.DecimalField(max_digits=16, decimal_places=2)
+    price = models.DecimalField(max_digits=16, decimal_places=6)
     quantity = models.DecimalField(max_digits=16, decimal_places=4)  # Allow partial
-    fee = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    tax = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
+    tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
     date = models.DateField(default=date.today)
 
     class Meta:
@@ -308,8 +308,6 @@ class Security(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=255, blank=True)  
     isin = models.CharField(max_length=20, blank=True)
-    close = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    date = models.DateField(default=date.today)
 
     # metadata
     api_source = models.CharField(max_length=50, blank=True, null=True)
@@ -331,11 +329,11 @@ class Security(models.Model):
 class SecurityPrice(models.Model):
     security = models.ForeignKey('Security', on_delete=models.CASCADE, default=1)
     date = models.DateField(null=True, blank=True)
-    open = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
-    high = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
-    low = models.DecimalField(max_digits=16, decimal_places=2,null=True, blank=True)
-    close = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
-    adjusted_close = models.DecimalField(max_digits=16, decimal_places=2,null=True, blank=True)
+    open = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
+    high = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
+    low = models.DecimalField(max_digits=16, decimal_places=6,null=True, blank=True)
+    close = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
+    adjusted_close = models.DecimalField(max_digits=16, decimal_places=6,null=True, blank=True)
     volume = models.BigIntegerField(default=0)
 
     class Meta:

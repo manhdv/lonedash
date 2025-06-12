@@ -13,7 +13,8 @@ from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 from django.db.models import Prefetch
 from django.db.models import OuterRef, Subquery
 
-from .utils import utils_calculate_drawdown, utils_calculate_twrr
+from .utils import utils_calculate_drawdown, utils_calculate_twrr, utils_recalc_from
+from django.db.models import Min
 
 
 from django.db.models import Sum, F, Q
@@ -206,6 +207,8 @@ def settings_view(request):
     api_keys, _ = UserAPIKey.objects.get_or_create(user=user)
     user_pref, _ = UserPreference.objects.get_or_create(user=user)
 
+    print(f"[INFO] Setting_view called")
+
     if request.method == "POST":
         api_keys.key_eodhd = request.POST.get("key_eodhd", "").strip()
         api_keys.key_finhub = request.POST.get("key_finhub", "").strip()
@@ -213,9 +216,43 @@ def settings_view(request):
         api_keys.key_yahoo = request.POST.get("key_yahoo", "").strip()
         api_keys.save()
 
+        print(f"[INFO] Setting_view POST")
+
+        # Track if currency changed
+        try:
+            new_currency_id = int(request.POST.get("currency"))
+        except (TypeError, ValueError):
+            new_currency_id = None
+
+        current_currency_id = UserPreference.objects.get(user=user).currency.id
+        print(f"[DEBUG] Submitted currency: {new_currency_id}")
+        print(f"[DEBUG] Current user_pref.currency_id: {current_currency_id}")
         user_pref.language_id = request.POST.get("language") or None
         user_pref.currency_id = request.POST.get("currency") or None
         user_pref.save()
+        if str(current_currency_id) != str(new_currency_id):
+
+            print(f"[INFO] User {user.id} changed currency from {current_currency_id} to {new_currency_id}")
+
+            # Find the latest performance date
+            earliest_date = (
+                PortfolioPerformance.objects
+                .filter(user=user)
+                .aggregate(Min("date"))["date__min"]
+            )
+
+            print(f"[DEBUG] Earliest portfolio performance date: {earliest_date}")
+
+            if earliest_date:
+                print(f"[INFO] Recalculating portfolio for user {user.id} as of {earliest_date}")
+                utils_recalc_from(user, earliest_date)
+            else:
+                print(f"[WARN] No portfolio performance found for user {user.id}, skipping recalculation")
+        else:
+            print(f"[INFO] Currency not changed for user {user.id}, skipping recalculation")
+
+
+
 
         return redirect("settings")
 

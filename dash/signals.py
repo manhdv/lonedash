@@ -1,7 +1,7 @@
 from django.contrib.auth.signals import user_logged_in
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
-from .models import SecurityPrice, TradeEntry, TradeExit, Transaction, AccountBalance, Account
+from .models import AccountBalance
 from .utils import utils_update_security_prices_for_user, utils_recalc_portfolio, utils_update_account
 from datetime import date as date_dt
 

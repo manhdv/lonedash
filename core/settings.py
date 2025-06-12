@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB', 'lonedash'),
         'USER': os.environ.get('POSTGRES_USER', 'lonedash'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'lonedash'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),  # service name in compose
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),  # service name in compose
         'PORT': '5432',
     }
 }
