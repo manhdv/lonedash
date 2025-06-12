@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, UserAPIKey, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance, UserAPIKey, UserPreference, UserPreference, Currency, Language
+from .models import Account, Transaction, UserAPIKey, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance, UserAPIKey, UserPreference, Currency, Language
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 
 from django.db.models import Prefetch
@@ -33,11 +33,13 @@ def dash_view(request):
     portfolio = data.last()
     max_dd = utils_calculate_drawdown(data)
     twrr = utils_calculate_twrr(data)
+    currency_symbol = request.user.userpreference.currency.symbol
     return render(request, 'dash.html', {
         'icons_svg': get_icons_svg(),
         'portfolio': portfolio,
         'max_dd' : max_dd,
         'twrr': twrr,
+        'currency_symbol': currency_symbol
         'active_page': "dashboard"
     })
 
