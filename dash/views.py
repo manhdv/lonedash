@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 
-from .models import Account, Transaction, Setting, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance
+from .models import Account, Transaction, UserAPIKey, Security, TradeEntry, TradeExit, AccountBalance, SecurityPrice, PortfolioPerformance, UserAPIKey, UserPreference, UserPreference, Currency, Language
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 
 from django.db.models import Prefetch
@@ -202,14 +202,34 @@ def exit_edit_form(request, id):
     })
 
 def settings_view(request):
-    obj, _ = Setting.objects.get_or_create(user=request.user)
+    user = request.user
+    api_keys, _ = UserAPIKey.objects.get_or_create(user=user)
+    user_pref, _ = UserPreference.objects.get_or_create(user=user)
+
     if request.method == "POST":
-        obj.key_yahoo = request.POST.get('key_yahoo', '').strip()
-        obj.key_eodhd = request.POST.get('key_eodhd', '').strip()
-        obj.save()
-        return redirect('settings') 
-    svg_content = get_icons_svg()
-    return render(request, "settings.html", {'icons_svg': svg_content, 'key_yahoo': obj.key_yahoo, 'key_eodhd': obj.key_eodhd,})
+        api_keys.key_eodhd = request.POST.get("key_eodhd", "").strip()
+        api_keys.key_finhub = request.POST.get("key_finhub", "").strip()
+        api_keys.key_alpha_vantage = request.POST.get("key_alpha_vantage", "").strip()
+        api_keys.key_yahoo = request.POST.get("key_yahoo", "").strip()
+        api_keys.save()
+
+        user_pref.language_id = request.POST.get("language") or None
+        user_pref.currency_id = request.POST.get("currency") or None
+        user_pref.save()
+
+        return redirect("settings")
+
+    return render(request, "settings.html", {
+        "key_eodhd": api_keys.key_eodhd,
+        "key_finhub": api_keys.key_finhub,
+        "key_alpha_vantage": api_keys.key_alpha_vantage,
+        "key_yahoo": api_keys.key_yahoo,
+        "languages": Language.objects.all(),
+        "currencies": Currency.objects.all(),
+        "current_lang": user_pref.language_id,
+        "current_currency": user_pref.currency_id,
+    })
+
 
 def security_search_form(request):
     return render(request, 'modals/search_modal.html')

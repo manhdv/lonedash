@@ -9,15 +9,16 @@ import requests
 from django.utils import timezone
 from django.db.models import Max
 
-from dash.models import Security, SecurityPrice, Setting
 from .models import (
+    Security,
     AccountBalance,
     PortfolioPerformance,
     TradeEntry,
     TradeExit,
     SecurityPrice,
     Transaction,
-    Account
+    Account,
+    UserAPIKey, 
 )
 
 
@@ -168,24 +169,23 @@ def utils_calc_float_equity(account, on_date):
     return equity
 
 
-
-
-
-
-def utils_fetch_security_prices_eodhd(security_code, period_days=90, start_date=None):
+def utils_fetch_security_prices_eodhd(user, security_code, period_days=90, start_date=None):
     """
     Trả về list dict {'date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume'}
     cho security_code, tối đa 90 ngày gần nhất (free plan), giống utils_fetch_security_prices_yahoo.
     Nếu có start_date thì sẽ lọc lại sau khi fetch.
     """
-    api_key = Setting.objects.values_list("key_eodhd", flat=True).first() or ""
-    if not api_key:
+    user_api, _ = UserAPIKey.objects.get_or_create(user=user)
+
+    key_eodhd = user_api.key_eodhd
+
+    if not key_eodhd:
         print("EODHD API key missing (Setting.key_eodhd).")
         return []
 
     url = (
         f"https://eodhd.com/api/eod/{security_code}"
-        f"?period={period_days}d&api_token={api_key}&fmt=json"
+        f"?period={period_days}d&api_token={key_eodhd}&fmt=json"
     )
 
     try:
@@ -276,7 +276,7 @@ def utils_update_security_prices_for_user(user):
 
         if security.api_source == 'eodhd':
             symbol = f"{security.code}.{security.exchange}"
-            prices = utils_fetch_security_prices_eodhd(symbol, start_date=start_date)
+            prices = utils_fetch_security_prices_eodhd(user, symbol, start_date=start_date)
             if not prices:
                 continue
 

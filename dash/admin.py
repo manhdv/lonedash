@@ -1,11 +1,20 @@
 from django.contrib import admin
-from .models import Country, Indicator, EconomicData, Account, Transaction, AccountBalance, Setting, Security, SecurityPrice, TradeExit, TradeEntry, PortfolioPerformance
+from .models import (Indicator, 
+                     EconomicData, 
+                     Account, 
+                     Transaction,
+                     AccountBalance, 
+                     Security, 
+                     SecurityPrice, 
+                     TradeExit, 
+                     TradeEntry, 
+                     PortfolioPerformance, 
+                     Language,
+                     Currency,
+                     Country,
+                     UserPreference,
+                     UserAPIKey)
 # Register your models here.
-
-@admin.register(Country)
-class CountryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'iso_code')
-    search_fields = ('name', 'iso_code')
 
 @admin.register(Indicator)
 class IndicatorAdmin(admin.ModelAdmin):
@@ -40,10 +49,6 @@ class AccountBalanceAdmin(admin.ModelAdmin):
     search_fields = ('account__name',)
     ordering = ('-date',)
 
-@admin.register(Setting)
-class SettingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'key_finhub', 'key_alpha_vantage', 'key_eodhd', 'key_yahoo', 'key_google_map')
-
 @admin.register(Security)
 class SecurityAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'exchange', 'user', 'date')
@@ -77,4 +82,33 @@ class TradeExitAdmin(admin.ModelAdmin):
 class PortfolioPerformanceAdmin(admin.ModelAdmin):
     list_display = ('user', 'date', 'balance', 'equity', 'principal', 'fee', 'tax', 'profit')
     list_filter = ('user', 'date')
+    search_fields = ('user__username',)
+
+@admin.register(Language)
+class LanguageAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name')
+    search_fields = ('code', 'name')
+
+
+@admin.register(Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'symbol')
+    search_fields = ('code', 'name')
+
+
+@admin.register(Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ('iso_code', 'name')
+    search_fields = ('iso_code', 'name')
+
+
+@admin.register(UserPreference)
+class UserPreferenceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'language', 'currency', 'theme')
+    autocomplete_fields = ('user', 'language', 'currency')
+    search_fields = ('user__username',)
+
+@admin.register(UserAPIKey)
+class UserAPIKeyAdmin(admin.ModelAdmin):
+    list_display = ('user', 'key_eodhd', 'key_finhub', 'key_alpha_vantage', 'key_yahoo')
     search_fields = ('user__username',)

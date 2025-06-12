@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST, require_http_methods
 
 from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, Setting, Security, Country, TradeEntry, TradeExit, PortfolioPerformance
+from .models import Account, Transaction, Security, Country, TradeEntry, TradeExit, PortfolioPerformance, UserAPIKey
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 from .utils import utils_update_account, utils_update_security_prices_for_user
 
@@ -121,13 +121,7 @@ def api_security_search(request):
     q = request.GET.get('q', '')
     if not q:
         return JsonResponse({'error': 'Missing query'}, status=400)
-
-    user = request.user
-    try:
-        setting = Setting.objects.get(user=user)
-    except Setting.DoesNotExist:
-        return JsonResponse({'error': 'No API keys configured'}, status=500)
-
+    
     yahoo_results = []
     eodhd_results = []
 
@@ -146,7 +140,8 @@ def api_security_search(request):
     print(f"Yahoo results: {len(yahoo_results)}")
     # EODHD
     try:
-        eodhd_key = setting.key_eodhd
+        user_api, _ = UserAPIKey.objects.get_or_create(user=request.user)
+        eodhd_key = user_api.key_eodhd
         if eodhd_key:
             eodhd_url = f'https://eodhd.com/api/search/{q}'
             eodhd_params = {'api_token': eodhd_key, 'limit': 20, 'fmt': 'json'}

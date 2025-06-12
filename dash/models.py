@@ -5,25 +5,46 @@ from datetime import date
 from django.core.exceptions import ValidationError
 
 # Create your models here.
-class Setting(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)  # Tham chiếu đến User
-
-    key_finhub= models.CharField(max_length=255, blank=True, null=True)
-    key_alpha_vantage = models.CharField(max_length=255, blank=True, null=True)
-    key_eodhd = models.CharField(max_length=255, blank=True, null=True)
-    key_yahoo = models.CharField(max_length=255, blank=True, null=True)
-    key_google_map = models.CharField(max_length=255, blank=True, null=True)
-
-    def __str__(self):
-        return self.user.username
-
-class Country(models.Model):
-    iso_code = models.CharField(max_length=3, unique=True)  # e.g. 'US', 'VN'
-    name = models.CharField(max_length=100)
-    currency = models.CharField(max_length=10, default='USD')
+class Language(models.Model):
+    code = models.CharField(max_length=10, unique=True)  # e.g. 'en', 'vi'
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
+
+class Currency(models.Model):
+    code = models.CharField(max_length=10, unique=True)  # 'USD'
+    name = models.CharField(max_length=100)              # 'US Dollar'
+    symbol = models.CharField(max_length=5, blank=True)
+
+    def __str__(self):
+        return self.code
+
+class Country(models.Model):
+    iso_code = models.CharField(max_length=3, unique=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class UserPreference(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True)
+    currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
+    theme = models.CharField(max_length=20, default='light')  # optional
+
+    def __str__(self):
+        return f"{self.user.username}'s Preferences"
+    
+class UserAPIKey(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    key_eodhd = models.CharField(max_length=255, blank=True)
+    key_finhub = models.CharField(max_length=255, blank=True)
+    key_alpha_vantage = models.CharField(max_length=255, blank=True)
+    key_yahoo = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s API Keys"
 
 class Indicator(models.Model):
     code = models.CharField(max_length=50, unique=True)  # e.g. 'gdp', 'inflation'
@@ -51,15 +72,6 @@ class EconomicData(models.Model):
 
     def __str__(self):
         return f'{self.country} - {self.indicator} @ {self.date}: {self.value}'
-
-class Currency(models.Model):
-    code = models.CharField(max_length=10, unique=True)  # 'USD', 'VND', 'JPY'
-    name = models.CharField(max_length=100)              # 'US Dollar'
-    symbol = models.CharField(max_length=5, blank=True)  # '$'
-    # optional: decimal places, is_crypto, exchange_rate, etc.
-
-    def __str__(self):
-        return self.code
 
 
 class Account(models.Model):
