@@ -223,7 +223,7 @@ def settings_view(request):
         "key_eodhd": api_keys.key_eodhd,
         "key_finhub": api_keys.key_finhub,
         "key_alpha_vantage": api_keys.key_alpha_vantage,
-        "key_yahoo": api_keys.key_yahoo,
+        'icons_svg': get_icons_svg(),
         "languages": Language.objects.all(),
         "currencies": Currency.objects.all(),
         "current_lang": user_pref.language_id,
