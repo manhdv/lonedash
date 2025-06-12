@@ -321,11 +321,24 @@ def utils_update_security_prices_for_user(user):
             print(f"Unknown api_source '{security.api_source}' for {security.code}, skipping.")
 
 # ---- helper -------------------------------------------------------------
-
 def utils_format_currency_pair(source: str, target: str) -> str:
-    if source.upper() == "USD":
-        return f"{target.upper()}=X"
-    return f"{source.upper()}{target.upper()}=X"
+    source = source.upper()
+    target = target.upper()
+    return f"{target}=X" if source == "USD" else f"{source}{target}=X"
+
+
+def get_quote(symbol: str, as_of: date) -> Decimal | None:
+    quotes = list(
+        SecurityPrice.objects
+        .filter(security__code=symbol, close__gt=0)
+        .only("date", "close")
+    )
+    if not quotes:
+        return None
+
+    closest = min(quotes, key=lambda q: abs(q.date - as_of))
+    return Decimal(closest.close)
+
 
 def utils_convert_currency(source: str, target: str, as_of: date) -> Decimal:
     source = source.upper()
@@ -334,47 +347,22 @@ def utils_convert_currency(source: str, target: str, as_of: date) -> Decimal:
     if source == target:
         return Decimal("1")
 
+    if target == "USD":
+        reverse_symbol = utils_format_currency_pair("USD", source)  # e.g. VND=X
+        if Security.objects.filter(code=reverse_symbol).exists():
+            quote = get_quote(reverse_symbol, as_of)
+            if quote and quote != 0:
+                return Decimal("1") / quote
+            print(f"[DEBUG] No quote found for reverse_symbol {reverse_symbol} at {as_of}")
+        else:
+            print(f"[DEBUG] reverse_symbol {reverse_symbol} does not exist")
+
     symbol = utils_format_currency_pair(source, target)
-
-    print(f"Debug Sumbol = {symbol}")
-
     if not Security.objects.filter(code=symbol).exists():
-        print(f"Debug Sumbol not exits")
-        return Decimal("1")  # fallback nếu không có mã FX
+        return Decimal("1")
 
-    # 1) Tìm giá gần nhất quá khứ
-    quote = (
-        SecurityPrice.objects
-        .filter(
-            security__code=symbol,
-            date__lte=as_of,
-            close__gt=0
-        )
-        .order_by('-date')
-        .first()
-    )
-
-    if not quote:
-        # 2) Không có quá khứ, tìm sớm nhất sau as_of
-        quote = (
-            SecurityPrice.objects
-            .filter(
-                security__code=symbol,
-                date__gt=as_of,
-                close__gt=0
-            )
-            .order_by('date')
-            .first()
-        )
-
-    if not quote:
-        print(f"Not in quote")
-        return Decimal("1")  # fallback nếu không có dữ liệu luôn
-    
-
-    print(f"Find quote {quote.close}")
-    return Decimal(quote.close)
-
+    quote = get_quote(symbol, as_of)
+    return quote if quote else Decimal("1")
 
 
 def utils_recalc_portfolio(user, day):
