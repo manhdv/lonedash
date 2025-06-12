@@ -39,7 +39,7 @@ def dash_view(request):
         'portfolio': portfolio,
         'max_dd' : max_dd,
         'twrr': twrr,
-        'currency_symbol': currency_symbol
+        'currency_symbol': currency_symbol,
         'active_page': "dashboard"
     })
 
