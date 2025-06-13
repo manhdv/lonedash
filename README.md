@@ -98,7 +98,7 @@ docker-compose up --build
 
 The app will auto-create the database and superuser on first boot.
 
-VVisit the app at [localhost:8000](http://localhost:8000)
+Visit the app at [localhost:8000](http://localhost:8000)
 
 ## Notes
 
