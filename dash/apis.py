@@ -1,8 +1,8 @@
 from decimal import Decimal
 import requests
 import json
-from datetime import timedelta, date
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+from django.core.cache import cache
 
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
@@ -255,21 +255,23 @@ def api_entry_update(request, id):
 
 
 def api_portfolio_chart(request):
-    # performance series
-    perf_qs = PortfolioPerformance.objects.filter(
-        user=request.user
-    ).order_by('date')
+    user = request.user
+    cache_key = f"portfolio_chart_{user.id}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return JsonResponse(cached_data)
 
-    # lấy list ngày để map cho lẹ
+    perf_qs = PortfolioPerformance.objects.filter(user=user).order_by("date")
     dates = [p.date for p in perf_qs]
 
-    # ----‑ build JSON ----‑
     chart_data = {
-        "labels":      [d.strftime('%Y-%m-%d') for d in dates],
-        "principal":   [float(p.principal) for p in perf_qs],
-        "equity":      [float(p.equity)    for p in perf_qs],
-        "transactions":[float(p.transaction)    for p in perf_qs],
+        "labels": [d.strftime('%Y-%m-%d') for d in dates],
+        "principal": [float(p.principal) for p in perf_qs],
+        "equity": [float(p.equity) for p in perf_qs],
+        "transactions": [float(p.transaction) for p in perf_qs],
     }
+
+    cache.set(cache_key, chart_data, timeout=3600)  # Cache data in 1 hour
     return JsonResponse(chart_data)
 
 @require_http_methods(["POST", "PUT"])
@@ -333,14 +335,14 @@ def api_exit_update(request, id):
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
-from collections import defaultdict, OrderedDict
-from django.http import JsonResponse
-from datetime import date
-
 def api_holdings_data(request):
     user = request.user
-    target_currency = UserPreference.objects.get(user=user).currency.code
+    cache_key = f"holdings_data_{user.id}"
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return JsonResponse(cached_data)
 
+    target_currency = UserPreference.objects.get(user=user).currency.code
     records = DailyHoldingEquity.objects.filter(user=user).order_by("date")
 
     if not records.exists():
@@ -366,5 +368,8 @@ def api_holdings_data(request):
         "labels": date_list,
         "datasets": datasets
     }
+
+    # Cache for 1 hour (3600s) — tweak as needed
+    cache.set(cache_key, chart_data, timeout=3600)
 
     return JsonResponse(chart_data)

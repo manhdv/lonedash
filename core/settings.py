@@ -119,6 +119,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Cache memory for chart data
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "chart-data-cache",
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
