@@ -80,7 +80,7 @@ def login_view(request):
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
-        return redirect(request.GET.get('next', 'accounts'))
+        return redirect(request.GET.get('next', 'dashboard'))
 
     return render(request, 'login.html', {'form': form})
 
@@ -272,3 +272,7 @@ def settings_view(request):
 
 def security_search_form(request):
     return render(request, 'modals/search_modal.html')
+
+
+def holdings_view(request):
+    return render(request, 'holdings.html', {'active_page': "holdings"})

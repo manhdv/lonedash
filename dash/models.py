@@ -322,6 +322,24 @@ class Security(models.Model):
         indexes = [
             models.Index(fields=['user', 'code']),
         ]
+
+    def price_on(self, target_date: date) -> Decimal | None:
+        # Ưu tiên lấy giá trong quá khứ gần nhất
+        past = SecurityPrice.objects.filter(
+            security=self, date__lte=target_date
+        ).order_by('-date').first()
+        if past and past.close:
+            return past.close
+
+        # Nếu không có thì lấy giá trong tương lai gần nhất
+        future = SecurityPrice.objects.filter(
+            security=self, date__gt=target_date
+        ).order_by('date').first()
+        if future and future.close:
+            return future.close
+
+        return None
+
     def __str__(self):
         return f"{self.code} - {self.name}"
 

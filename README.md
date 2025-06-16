@@ -43,7 +43,7 @@ GRANT ALL ON SCHEMA public TO lonedash;
 3. Create a .env file:
 
 ```bash
-HOST=http://localhost:8000
+HOSTS=localhost,127.0.0.1
 DEBUG=True
 SECRET_KEY=replace-this-with-something-secret
 POSTGRES_DB=lonedash
@@ -77,7 +77,7 @@ Visit [http://localhost:8000](http://localhost:8000)
 1. Create a .env file with the following content:
 
 ```bash
-HOST=http://localhost:8000
+HOSTS=localhost,127.0.0.1
 DEBUG=True
 SECRET_KEY=replace-this-with-something-secret
 POSTGRES_DB=lonedash

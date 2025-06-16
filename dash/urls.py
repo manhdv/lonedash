@@ -1,4 +1,6 @@
 from django.urls import path
+from django.views.generic import RedirectView
+
 from .views import (
     dash_view,
     accounts_view,
@@ -7,6 +9,8 @@ from .views import (
     trades_view,
     login_view,
     logout_view,
+    holdings_view,
+
     account_edit_form,
     account_create_form,
     transaction_create_form,
@@ -30,13 +34,15 @@ from .apis import (
     api_entry_update,
     api_exit_add,
     api_exit_update,
-    api_portfolio_chart
+    api_portfolio_chart,
+    api_holdings_data
 )
 
 #Views
 urlpatterns = [
-    path('', dash_view, name='dash'),
+# urls.py
     path('dashboard/', dash_view, name='dashboard'),
+    path('', RedirectView.as_view(pattern_name='dashboard', permanent=False)),
 
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
@@ -45,6 +51,8 @@ urlpatterns = [
     path('securities/', securities_view, name='securities'),
     path('settings/', settings_view, name='settings'),
     path('trades/', trades_view, name='trades'),
+
+    path('holdings/', holdings_view, name='holdings'),
 
 
 ]
@@ -83,4 +91,6 @@ urlpatterns += [
     path('api/exit/<int:id>/', api_exit_update, name='api_exit_update'),
 
     path('api/portfolio/data/', api_portfolio_chart, name='api_portfolio_chart'),
+    path('api/holdings/data/', api_holdings_data, name='api_holdings_data'),
+    
 ]

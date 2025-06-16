@@ -1,15 +1,18 @@
 from decimal import Decimal
 import requests
 import json
+from datetime import timedelta, date
+from collections import defaultdict
 
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 
 from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, Security, Country, TradeEntry, TradeExit, PortfolioPerformance, UserAPIKey
+from .models import Account, Transaction, Security, Country, TradeEntry, TradeExit, PortfolioPerformance, UserAPIKey, UserPreference
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
-from .utils import utils_update_account, utils_update_security_prices_for_user
+from .utils import utils_update_account, utils_update_security_prices_for_user, utils_convert_currency
+
 
 
 @require_POST
@@ -323,3 +326,65 @@ def api_exit_update(request, id):
 
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
+
+def api_holdings_data(request):
+    from collections import OrderedDict
+
+    user = request.user
+    target_currency = UserPreference.objects.get(user=user).currency.code
+    accounts = user.accounts.all()
+    entries = TradeEntry.objects.filter(account__in=accounts)
+
+    holding_entries = [e for e in entries if e.remaining_quantity > 0]
+    if not holding_entries:
+        return JsonResponse([], safe=False)
+
+    start_date = min(e.date for e in holding_entries)
+    end_date = date.today()
+
+    date_list = []
+    result = defaultdict(lambda: OrderedDict())  # giữ thứ tự ngày
+
+    current_date = start_date
+    while current_date <= end_date:
+        daily_equity = defaultdict(Decimal)
+
+        for entry in holding_entries:
+            if current_date < entry.date:
+                continue
+
+            qty = entry.remaining_quantity_at(current_date)
+            if qty == 0:
+                continue
+
+            code = entry.security.code
+            price = entry.security.price_on(current_date)
+            if price is None:
+                continue
+
+            equity = qty * price
+
+            source_currency = entry.account.currency.code
+            if source_currency != target_currency:
+                equity *= utils_convert_currency(source_currency, target_currency, current_date)
+
+            daily_equity[code] += equity
+
+        if daily_equity:
+            date_list.append(current_date.strftime('%Y-%m-%d'))
+            for code in result.keys() | daily_equity.keys():
+                result[code][current_date.strftime('%Y-%m-%d')] = float(daily_equity.get(code, 0))
+
+        current_date += timedelta(days=1)
+
+    # convert to frontend format
+    datasets = {
+        code: [data.get(date, 0) for date in date_list]
+        for code, data in result.items()
+    }
+
+    chart_data = {
+        "labels": date_list,
+        "datasets": datasets
+    }
+    return JsonResponse(chart_data)
