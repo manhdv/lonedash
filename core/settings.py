@@ -33,7 +33,12 @@ DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 hosts = os.getenv("HOSTS", "").split(",")
 ALLOWED_HOSTS = hosts
-CSRF_TRUSTED_ORIGINS = [f"http://{host}:8000" for host in hosts]
+CSRF_TRUSTED_ORIGINS = [
+    f"{'http' if host in ['localhost', '127.0.0.1'] else 'https'}://{host}{':8000' if host in ['localhost', '127.0.0.1'] else ''}"
+    for host in hosts
+]
+
+
 
 # Application definition
 
