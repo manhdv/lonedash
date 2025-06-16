@@ -33,7 +33,8 @@ def utils_update_account(account, start_date=None):
     If `start_date` is None, the function resumes from the most-recent
     AccountBalance date stored for that account (or today if none exists).
     """
-    # 1️⃣  Xác định ngày bắt đầu
+
+    # 1️⃣ Xác định ngày bắt đầu
     if start_date is None:
         last_bal = (
             AccountBalance.objects.filter(account=account)
@@ -42,9 +43,10 @@ def utils_update_account(account, start_date=None):
         )
         start_date = last_bal.date if last_bal else date.today()
 
-    # ------------------------------------------------------------------ #
-    # 2️⃣  CẬP NHẬT balance / fee / tax / principal  (giống hàm cũ)
-    # ------------------------------------------------------------------ #
+    # 🧹 Xoá dữ liệu cũ từ start_date trở đi
+    AccountBalance.objects.filter(account=account, date__gte=start_date).delete()
+
+    # 2️⃣ Lấy balance trước đó (nếu có)
     prev_bal = (
         AccountBalance.objects.filter(account=account, date__lt=start_date)
         .order_by("-date")
@@ -55,19 +57,16 @@ def utils_update_account(account, start_date=None):
     tax = prev_bal.tax if prev_bal else Decimal("0")
     principal = prev_bal.principal if prev_bal else Decimal("0")
 
-    transactions = (
-        account.transactions.filter(date__gte=start_date).order_by("date")
-    )
+    # 3️⃣ Lấy giao dịch, entries, exits
+    transactions = account.transactions.filter(date__gte=start_date).order_by("date")
     entries = account.entries.filter(date__gte=start_date).order_by("date")
-    exits = (
-        TradeExit.objects.filter(entry__account=account, date__gte=start_date)
-        .order_by("date")
-    )
+    exits = TradeExit.objects.filter(entry__account=account, date__gte=start_date).order_by("date")
 
-    daily_changes = defaultdict(Decimal)
-    daily_fee = defaultdict(Decimal)
-    daily_tax = defaultdict(Decimal)
-    daily_principal = defaultdict(Decimal)
+    # 4️⃣ Gom dữ liệu theo ngày
+    daily_changes = defaultdict(lambda: Decimal("0"))
+    daily_fee = defaultdict(lambda: Decimal("0"))
+    daily_tax = defaultdict(lambda: Decimal("0"))
+    daily_principal = defaultdict(lambda: Decimal("0"))
 
     for tx in transactions:
         daily_changes[tx.date] += tx.net_amount
@@ -81,15 +80,16 @@ def utils_update_account(account, start_date=None):
         daily_fee[entry.date] += entry.fee
         daily_tax[entry.date] += entry.tax
 
-
     for ex in exits:
         daily_changes[ex.date] += ex.net_amount
         daily_fee[ex.date] += ex.fee
         daily_tax[ex.date] += ex.tax
 
-    all_dates = (
-        set(daily_changes.keys()) | set(daily_principal.keys()) or {start_date}
-    )
+    # 5️⃣ Duyệt từng ngày và cập nhật balance + equity
+    all_dates = set(daily_changes.keys()) | set(daily_principal.keys())
+    if not all_dates:
+        all_dates = {start_date}
+
     today = date.today()
     current = min(all_dates)
     last = max(today, max(all_dates))
@@ -100,9 +100,6 @@ def utils_update_account(account, start_date=None):
         tax += daily_tax[current]
         principal += daily_principal[current]
 
-        # ------------------------------------------------------------------ #
-        # 3️⃣  TÍNH equity-float cho current
-        # ------------------------------------------------------------------ #
         float_equity = utils_calc_float_equity(account, current)
 
         AccountBalance.objects.update_or_create(
@@ -116,7 +113,9 @@ def utils_update_account(account, start_date=None):
                 "float": float_equity,
             },
         )
+
         current += timedelta(days=1)
+
 
 
 # ---------------------------------------------------------------------- #
@@ -125,51 +124,28 @@ def utils_update_account(account, start_date=None):
 def utils_calc_float_equity(account, on_date):
     entries = TradeEntry.objects.filter(account=account)
     holdings = defaultdict(Decimal)
-    fallback_price = {}  # entry fallback price by security
 
     for entry in entries:
         remain = entry.remaining_quantity_at(until_date=on_date)
         if remain > 0:
             holdings[entry.security_id] += remain
-            # Ghi nhận giá entry mới nhất làm fallback
-            if (
-                entry.security_id not in fallback_price
-                or entry.date > fallback_price[entry.security_id][0]
-            ):
-                fallback_price[entry.security_id] = (entry.date, entry.price)
 
     if not holdings:
         return Decimal("0")
 
-    prices = SecurityPrice.objects.filter(
-        security_id__in=holdings.keys(), date=on_date
-    )
-    price_map = {p.security_id: p.close for p in prices}
-
-    def latest_before(sec_id):
-        obj = (
-            SecurityPrice.objects.filter(
-                security_id=sec_id,
-                date__lt=on_date,
-                close__gt=0
-            )
-            .order_by("-date")
-            .first()
-        )
-        return obj.close if obj else None
-
     equity = Decimal("0")
+    securities = Security.objects.in_bulk(holdings.keys())  # tránh N+1
+
     for sec_id, qty in holdings.items():
-        price_today = price_map.get(sec_id)
-        price = (
-            price_today if price_today and price_today > 0
-            else latest_before(sec_id)
-            or fallback_price.get(sec_id, (None, None))[1]  # dùng entry.price
-        )
+        security = securities.get(sec_id)
+        if not security:
+            continue
+        price = security.price_on(on_date)
         if price:
             equity += qty * price
 
     return equity
+
 
 
 def utils_fetch_security_prices_eodhd(user, security_code, period_days=90, start_date=None):
