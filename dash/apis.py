@@ -9,9 +9,9 @@ from django.views.decorators.http import require_POST, require_http_methods
 
 from django.shortcuts import get_object_or_404
 
-from .models import Account, Transaction, Security, Country, TradeEntry, TradeExit, PortfolioPerformance, UserAPIKey, UserPreference
+from .models import Account, Transaction, Security, Country, TradeEntry, TradeExit, PortfolioPerformance, UserAPIKey, UserPreference, DailyHoldingEquity
 from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
-from .utils import utils_update_account, utils_update_security_prices_for_user, utils_convert_currency
+from .utils import utils_update_account, utils_update_security_prices_for_user, utils_convert_currency, utils_recalc_daily_holdings
 
 
 
@@ -213,6 +213,7 @@ def api_entry_add(request):
         entry.save()
 
         utils_update_account(entry.account, entry.date)
+        utils_recalc_daily_holdings(user=request.user,security= entry.security,from_date= entry.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -239,12 +240,14 @@ def api_entry_update(request, id):
             updated_entry = form.save()
             min_date = min(old_date, updated_entry.date)
             utils_update_account(updated_entry.account, min_date)
+            utils_recalc_daily_holdings(user=request.user,security= entry.security,from_date= min_date)
             return JsonResponse({'success': True, 'id': entry.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
         entry.delete()
         utils_update_account(entry.account, entry.date)
+        utils_recalc_daily_holdings(user=request.user,security= entry.security,from_date= entry.date)
         return JsonResponse({'success': True})
 
     else:
@@ -289,6 +292,7 @@ def api_exit_add(request):
         exit.save()
        
         utils_update_account(exit.entry.account, exit.date)
+        utils_recalc_daily_holdings(user=request.user,security= exit.security,from_date= exit.date)
         return JsonResponse({'status': 'ok'})
     else:
         print('Form errors:', form.errors.as_json())
@@ -316,68 +320,43 @@ def api_exit_update(request, id):
             updated_exit = form.save()
             min_date = min(old_date, updated_exit.date)
             utils_update_account(updated_exit.account, min_date)
+            utils_recalc_daily_holdings(user=request.user,security= exit.security,from_date= min_date)
             return JsonResponse({'success': True, 'id': exit.id})
         return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
     elif request.method == "DELETE":
         exit.delete()
         utils_update_account(exit.entry.account, exit.date)
+        utils_recalc_daily_holdings(user=request.user,security= exit.security,from_date= exit.date)
         return JsonResponse({'success': True})
 
     else:
         return HttpResponseNotAllowed(['PUT', 'PATCH', 'DELETE'])
 
-def api_holdings_data(request):
-    from collections import OrderedDict
+from collections import defaultdict, OrderedDict
+from django.http import JsonResponse
+from datetime import date
 
+def api_holdings_data(request):
     user = request.user
     target_currency = UserPreference.objects.get(user=user).currency.code
-    accounts = user.accounts.all()
-    entries = TradeEntry.objects.filter(account__in=accounts)
 
-    holding_entries = [e for e in entries if e.remaining_quantity > 0]
-    if not holding_entries:
+    records = DailyHoldingEquity.objects.filter(user=user).order_by("date")
+
+    if not records.exists():
         return JsonResponse([], safe=False)
 
-    start_date = min(e.date for e in holding_entries)
-    end_date = date.today()
+    date_list = sorted(set(r.date.strftime("%Y-%m-%d") for r in records))
+    result = defaultdict(lambda: OrderedDict())
 
-    date_list = []
-    result = defaultdict(lambda: OrderedDict())  # giữ thứ tự ngày
+    for r in records:
+        equity = r.equity
+        if r.currency != target_currency:
+            equity *= utils_convert_currency(r.currency, target_currency, r.date)
 
-    current_date = start_date
-    while current_date <= end_date:
-        daily_equity = defaultdict(Decimal)
+        date_str = r.date.strftime("%Y-%m-%d")
+        result[r.security.code][date_str] = float(equity)
 
-        for entry in holding_entries:
-            if current_date < entry.date:
-                continue
-
-            qty = entry.remaining_quantity_at(current_date)
-            if qty == 0:
-                continue
-
-            code = entry.security.code
-            price = entry.security.price_on(current_date)
-            if price is None:
-                continue
-
-            equity = qty * price
-
-            source_currency = entry.account.currency.code
-            if source_currency != target_currency:
-                equity *= utils_convert_currency(source_currency, target_currency, current_date)
-
-            daily_equity[code] += equity
-
-        if daily_equity:
-            date_list.append(current_date.strftime('%Y-%m-%d'))
-            for code in result.keys() | daily_equity.keys():
-                result[code][current_date.strftime('%Y-%m-%d')] = float(daily_equity.get(code, 0))
-
-        current_date += timedelta(days=1)
-
-    # convert to frontend format
     datasets = {
         code: [data.get(date, 0) for date in date_list]
         for code, data in result.items()
@@ -387,4 +366,5 @@ def api_holdings_data(request):
         "labels": date_list,
         "datasets": datasets
     }
+
     return JsonResponse(chart_data)

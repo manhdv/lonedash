@@ -193,6 +193,7 @@ class Transaction(models.Model):
         return f"{self.date} - {self.type} - {self.amount}"
 
 class TradeEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='entries')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='entries')
     security = models.ForeignKey('Security', on_delete=models.CASCADE, related_name='entries')
 
@@ -245,6 +246,7 @@ class TradeEntry(models.Model):
         return f"{self.date} - BUY {self.quantity} x {self.security.code} @ {self.price}"
     
 class TradeExit(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exits')
     entry = models.ForeignKey(TradeEntry, on_delete=models.CASCADE, related_name='exits')
 
     price = models.DecimalField(max_digits=16, decimal_places=6)
@@ -302,7 +304,7 @@ class TradeExit(models.Model):
 
 class Security(models.Model):
 #    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name='country')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='securities')
     code = models.CharField(max_length=20)
     exchange = models.CharField(max_length=20)
     name = models.CharField(max_length=255)
@@ -361,3 +363,10 @@ class SecurityPrice(models.Model):
         ]
     def __str__(self):
         return f"{self.security.code} - {self.date} - {self.close}"
+
+class DailyHoldingEquity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='holdings')
+    date = models.DateField()
+    security = models.ForeignKey(Security, on_delete=models.CASCADE)
+    equity = models.DecimalField(max_digits=20, decimal_places=4)
+    currency = models.CharField(max_length=10)  # để convert khi hiển thị

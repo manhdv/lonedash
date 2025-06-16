@@ -8,6 +8,7 @@ import requests
 
 from django.utils import timezone
 from django.db.models import Max
+from django.contrib.auth.models import User
 
 from .models import (
     Security,
@@ -20,6 +21,7 @@ from .models import (
     Account,
     UserAPIKey,
     UserPreference,
+    DailyHoldingEquity,
 )
 
 
@@ -523,3 +525,46 @@ def utils_calculate_twrr(entries):
     print(f"TWRR result: {twrr}")
 
     return twrr
+
+def utils_recalc_daily_holdings(user: User, security: Security, from_date: date):
+
+    DailyHoldingEquity.objects.filter(
+        user=user,
+        security=security,
+        date__gte=from_date
+    ).delete()
+
+    today = date.today()
+    current_date = from_date
+
+    while current_date <= today:
+        qty = 0
+        entries = TradeEntry.objects.filter(
+            account__user=user,
+            security=security,
+            date__lte=current_date
+        )
+        for entry in entries:
+            qty += entry.remaining_quantity_at(current_date)
+
+        if qty == 0:
+            current_date += timedelta(days=1)
+            continue
+
+        price = security.price_on(current_date)
+        if not price:
+            current_date += timedelta(days=1)
+            continue
+
+        equity = qty * price
+        currency = entries.first().account.currency.code if entries else "USD"
+
+        DailyHoldingEquity.objects.create(
+            user=user,
+            security=security,
+            date=current_date,
+            equity=equity,
+            currency=currency
+        )
+
+        current_date += timedelta(days=1)

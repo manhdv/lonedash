@@ -13,7 +13,7 @@ from .forms import AccountForm, TransactionForm, EntryForm, ExitForm
 from django.db.models import Prefetch
 from django.db.models import OuterRef, Subquery
 
-from .utils import utils_calculate_drawdown, utils_calculate_twrr, utils_recalc_from
+from .utils import utils_calculate_drawdown, utils_calculate_twrr, utils_recalc_from, utils_recalc_daily_holdings
 from django.db.models import Min
 
 
