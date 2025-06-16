@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data: values,
         borderWidth: 2,
         fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,  // optional, but prevents annoying hover dots
       }));
 
       new Chart(ctx, {

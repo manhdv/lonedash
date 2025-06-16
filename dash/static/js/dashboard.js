@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
               borderColor: 'blue',
               fill: false,
               pointRadius: 0,
+              pointHoverRadius: 0,
               yAxisID: 'y',
             },
             {
@@ -27,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
               borderColor: 'green',
               fill: false,
               pointRadius: 0,
+              pointHoverRadius: 0,
               yAxisID: 'y',
             },
             {
