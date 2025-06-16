@@ -329,18 +329,6 @@ def utils_format_currency_pair(source: str, target: str) -> str:
     return f"{target}=X" if source == "USD" else f"{source}{target}=X"
 
 
-def get_quote(symbol: str, as_of: date) -> Decimal | None:
-    quotes = list(
-        SecurityPrice.objects
-        .filter(security__code=symbol, close__gt=0)
-        .only("date", "close")
-    )
-    if not quotes:
-        return None
-
-    closest = min(quotes, key=lambda q: abs(q.date - as_of))
-    return Decimal(closest.close)
-
 
 def utils_convert_currency(source: str, target: str, as_of: date) -> Decimal:
     source = source.upper()
@@ -350,20 +338,22 @@ def utils_convert_currency(source: str, target: str, as_of: date) -> Decimal:
         return Decimal("1")
 
     if target == "USD":
-        reverse_symbol = utils_format_currency_pair("USD", source)  # e.g. VND=X
-        if Security.objects.filter(code=reverse_symbol).exists():
-            quote = get_quote(reverse_symbol, as_of)
+        reverse_symbol = utils_format_currency_pair("USD", source)
+        security = Security.objects.filter(code=reverse_symbol).first()
+        if security:
+            quote = security.price_on(as_of)
             if quote and quote != 0:
                 return Decimal("1") / quote
-            print(f"[DEBUG] No quote found for reverse_symbol {reverse_symbol} at {as_of}")
+            print(f"[DEBUG] No price found for {reverse_symbol} at {as_of}")
         else:
             print(f"[DEBUG] reverse_symbol {reverse_symbol} does not exist")
 
     symbol = utils_format_currency_pair(source, target)
-    if not Security.objects.filter(code=symbol).exists():
+    security = Security.objects.filter(code=symbol).first()
+    if not security:
         return Decimal("1")
 
-    quote = get_quote(symbol, as_of)
+    quote = security.price_on(as_of)
     return quote if quote else Decimal("1")
 
 
