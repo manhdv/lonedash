@@ -170,7 +170,6 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=16, decimal_places=6, default=0)
     fee = models.DecimalField(max_digits=16, decimal_places=6, default=0)
     tax = models.DecimalField(max_digits=16, decimal_places=6, default=0)
-    currency = models.CharField(max_length=50, default='USD')
     date = models.DateField(default=date.today)
     description = models.TextField(blank=True)
 

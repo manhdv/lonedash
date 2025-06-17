@@ -271,7 +271,7 @@ def api_portfolio_chart(request):
         "transactions": [float(p.transaction) for p in perf_qs],
     }
 
-    cache.set(cache_key, chart_data, timeout=3600)  # Cache data in 1 hour
+    cache.set(cache_key, chart_data, timeout=600)  # Cache data in 10 minutes
     return JsonResponse(chart_data)
 
 @require_http_methods(["POST", "PUT"])
@@ -369,7 +369,7 @@ def api_holdings_data(request):
         "datasets": datasets
     }
 
-    # Cache for 1 hour (3600s) — tweak as needed
-    cache.set(cache_key, chart_data, timeout=3600)
+    # Cache for 30 minutes (1800) — tweak as needed
+    cache.set(cache_key, chart_data, timeout=1800)
 
     return JsonResponse(chart_data)

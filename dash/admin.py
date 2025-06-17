@@ -37,8 +37,8 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('date', 'type', 'amount', 'currency', 'account', 'user')
-    list_filter = ('type', 'date', 'currency')
+    list_display = ('date', 'type', 'amount', 'account', 'user')
+    list_filter = ('type', 'date')
     search_fields = ('description', 'account__name', 'user__username')
     ordering = ('-date',)
 
